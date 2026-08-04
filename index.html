@@ -2555,22 +2555,219 @@ main.main{
   .due-dday{min-width:52px;height:30px;font-size:12px}
 }
 
+
+/* 빠른 매출·지출 등록: 금액 옆 아이콘 + 모바일 바텀시트 */
+.period-total-wrap{display:flex;align-items:center;gap:8px;margin-left:auto}
+.entry-add-btn{width:36px;height:36px;border:0;border-radius:12px;display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 5px 14px rgba(44,31,28,.08);transition:transform .15s ease,filter .15s ease}
+.entry-add-btn:active{transform:scale(.94)}
+.entry-add-btn svg{width:19px;height:19px;stroke-width:2.4}
+.entry-add-btn.sales{background:#eaf8ef;color:var(--sales)}
+.entry-add-btn.expense{background:#fff0ec;color:var(--expense)}
+.entry-sheet{position:fixed;inset:0;z-index:220;display:none;align-items:flex-end;justify-content:center;background:rgba(28,22,20,.48);backdrop-filter:blur(4px)}
+.entry-sheet.show{display:flex}
+.entry-sheet-panel{width:min(100%,760px);max-height:min(88dvh,760px);overflow:auto;background:#fff;border-radius:26px 26px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -18px 50px rgba(35,23,20,.20);animation:entrySheetUp .2s ease-out}
+.entry-sheet-handle{width:42px;height:5px;border-radius:999px;background:#ded4d0;margin:2px auto 12px}
+.entry-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.entry-sheet-title{display:flex;align-items:center;gap:10px}
+.entry-sheet-title .entry-symbol{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;font-size:24px;font-weight:500}
+.entry-sheet-title .entry-symbol.sales{background:#eaf8ef;color:var(--sales)}
+.entry-sheet-title .entry-symbol.expense{background:#fff0ec;color:var(--expense)}
+.entry-sheet-title h3{margin:0;font-size:18px}.entry-sheet-title p{margin:3px 0 0;font-size:11px;color:var(--muted)}
+.entry-sheet-close{width:38px;height:38px;border:0;border-radius:12px;background:#f5f1ef;color:#6c5e59;display:grid;place-items:center;font-size:24px;line-height:1}
+.entry-sheet .form-card{box-shadow:none;border:1px solid var(--line);padding:14px}
+.entry-sheet .form-grid,.entry-sheet .expense-form-grid{gap:10px}
+.entry-sheet .field input,.entry-sheet .field select{height:50px}
+.entry-sheet .expense-entry-head{display:none}
+.entry-sheet .btn.primary{height:52px;font-size:15px}
+body.entry-sheet-open{overflow:hidden;touch-action:none}
+@keyframes entrySheetUp{from{transform:translateY(24px);opacity:.5}to{transform:translateY(0);opacity:1}}
+@media(min-width:640px){.entry-sheet{align-items:center;padding:24px}.entry-sheet-panel{border-radius:26px;max-width:560px;padding:14px 18px 20px}}
+
+
+/* v0.3.2 금액 옆 버튼: 화면 안쪽 펼침 등록 */
+.inline-entry-host:empty{display:none}
+.inline-entry-host{margin:10px 0 4px}
+.inline-entry-host .entry-sheet{position:static;inset:auto;z-index:auto;display:none;background:none;backdrop-filter:none}
+.inline-entry-host .entry-sheet.show{display:block}
+.inline-entry-host .entry-sheet-panel{width:100%;max-height:none;overflow:visible;border-radius:18px;padding:10px;background:#fffaf8;border:1px solid var(--line);box-shadow:none;animation:none}
+.inline-entry-host .entry-sheet-handle{display:none}
+.inline-entry-host .entry-sheet-head{margin-bottom:8px}
+.inline-entry-host .entry-sheet-title .entry-symbol{width:30px;height:30px;border-radius:10px;font-size:19px}
+.inline-entry-host .entry-sheet-title h3{font-size:15px}
+.inline-entry-host .entry-sheet-title p{display:none}
+.inline-entry-host .entry-sheet-close{width:32px;height:32px;font-size:20px}
+.inline-entry-host .form-card{padding:0;border:0;background:transparent}
+.inline-entry-host .form-grid,.inline-entry-host .expense-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inline-entry-host .field label{font-size:12px;margin-bottom:5px}
+.inline-entry-host .field input,.inline-entry-host .field select{height:44px;border-radius:12px;font-size:15px}
+.inline-entry-host .field.memo{grid-column:1/-1}
+.inline-entry-host .btn.primary{grid-column:1/-1;height:46px;border-radius:13px;margin-top:0}
+.inline-entry-host .field-error{grid-column:1/-1}
+body.entry-sheet-open{overflow:auto;touch-action:auto}
+@media(max-width:390px){
+ .inline-entry-host .entry-sheet-panel{padding:9px}
+ .inline-entry-host .form-grid,.inline-entry-host .expense-form-grid{gap:7px}
+ .inline-entry-host .field input,.inline-entry-host .field select{height:42px;font-size:14px;padding-left:10px;padding-right:10px}
+}
+
+
+/* v0.3.3 한 화면 빠른등록: 상단 컴팩트 패널 + 아이콘 저장 */
+.inline-entry-host{margin:0!important}
+.inline-entry-host:empty{display:none}
+.inline-entry-host .entry-sheet{
+  position:fixed!important;
+  top:calc(74px + env(safe-area-inset-top))!important;
+  left:12px!important;right:12px!important;bottom:auto!important;
+  z-index:210!important;display:none!important;background:transparent!important;
+  backdrop-filter:none!important;pointer-events:none!important;
+}
+.inline-entry-host .entry-sheet.show{display:block!important}
+.inline-entry-host .entry-sheet-panel{
+  width:100%!important;max-height:none!important;overflow:visible!important;
+  border-radius:20px!important;padding:12px!important;background:#fff!important;
+  border:1px solid var(--line)!important;box-shadow:0 14px 36px rgba(44,31,28,.18)!important;
+  animation:compactEntryDown .16s ease-out!important;pointer-events:auto!important;
+}
+.inline-entry-host .entry-sheet-handle{display:none!important}
+.inline-entry-host .entry-sheet-head{margin-bottom:9px!important}
+.inline-entry-host .entry-sheet-title .entry-symbol{width:32px!important;height:32px!important;border-radius:10px!important;font-size:20px!important}
+.inline-entry-host .entry-sheet-title h3{font-size:16px!important}
+.inline-entry-host .entry-sheet-title p{display:none!important}
+.inline-entry-host .entry-sheet-close{width:34px!important;height:34px!important;font-size:21px!important}
+.inline-entry-host .form-card{padding:0!important;border:0!important;background:transparent!important}
+.inline-entry-host .form-grid,.inline-entry-host .expense-form-grid{
+  display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;align-items:end!important;
+}
+.inline-entry-host .field{min-width:0!important}
+.inline-entry-host .field label{font-size:11px!important;margin:0 0 4px 3px!important}
+.inline-entry-host .field input,.inline-entry-host .field select{height:43px!important;border-radius:12px!important;font-size:14px!important;padding:0 11px!important}
+.inline-entry-host .field.memo{grid-column:auto!important}
+.inline-entry-host .expense-card-field{grid-column:1/-1!important}
+.inline-entry-host .field-error{grid-column:1/-1!important;margin:0!important;font-size:11px!important}
+.inline-entry-host .btn.primary{
+  grid-column:1/-1!important;width:48px!important;height:44px!important;min-width:48px!important;
+  border-radius:14px!important;margin:0 0 0 auto!important;padding:0!important;
+  display:grid!important;place-items:center!important;font-size:0!important;
+}
+.inline-entry-host .btn.primary svg{width:23px;height:23px;stroke:currentColor;stroke-width:2.6;fill:none}
+@keyframes compactEntryDown{from{transform:translateY(-8px);opacity:.55}to{transform:translateY(0);opacity:1}}
+@media(max-width:390px){
+ .inline-entry-host .entry-sheet{left:8px!important;right:8px!important}
+ .inline-entry-host .entry-sheet-panel{padding:10px!important}
+ .inline-entry-host .form-grid,.inline-entry-host .expense-form-grid{gap:7px!important}
+ .inline-entry-host .field input,.inline-entry-host .field select{height:41px!important;font-size:13px!important;padding:0 9px!important}
+}
+
+
+/* 2026-08-05 final header/logo corrections */
+.compare-table th:nth-child(2),
+.compare-table th:nth-child(3){text-align:center !important;}
+.brand-icon,.logo{background:transparent !important;border-color:transparent !important;box-shadow:none !important;}
+.brand-icon img,.logo img{display:block;width:100%;height:100%;object-fit:contain;background:transparent !important;}
+
 </style>
 <meta content="#c9776d" name="theme-color"/>
-<link href="favicon-32.png?v=20260726-dbfix1" rel="icon" sizes="32x32" type="image/png"/>
-<link href="favicon-32.png?v=20260726-dbfix1" rel="shortcut icon" type="image/png"/>
-<link href="apple-touch-icon.png?v=20260726-dbfix1" rel="apple-touch-icon" sizes="180x180"/>
-<link href="manifest.webmanifest?v=20260726-dbfix1" rel="manifest"/>
+<link href="favicon-32.png?v=20260805-0014" rel="icon" sizes="32x32" type="image/png"/>
+<link href="favicon-32.png?v=20260805-0014" rel="shortcut icon" type="image/png"/>
+<link href="apple-touch-icon.png?v=20260805-0014" rel="apple-touch-icon" sizes="180x180"/>
+<link href="manifest.webmanifest?v=20260805-0014" rel="manifest"/>
 <meta content="#c9776d" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="미미네" name="apple-mobile-web-app-title"/>
 <meta content="미미네 매출관리" name="application-name"/>
+
+<style id="mimine-final-product-actions">
+/* 상품 카드 작업 버튼: 가격흐름·수정·삭제를 가로 아이콘으로 고정 */
+#products .product-actions{
+  grid-column:1/-1 !important;
+  display:flex !important;
+  flex-direction:row !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:8px !important;
+  width:100% !important;
+  margin-top:8px !important;
+}
+#products .product-actions button{
+  flex:0 0 44px !important;
+  width:44px !important;
+  height:44px !important;
+  min-width:44px !important;
+  padding:0 !important;
+  border-radius:13px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#products .product-actions button svg{
+  width:21px;
+  height:21px;
+  display:block;
+}
+</style>
+
+<style id="mimine-product-actions-horizontal-final">
+/* 최종 수정: 상품 카드 오른쪽에 가격흐름·수정·삭제 아이콘을 가로 배치 */
+#products .product-card{
+  grid-template-columns:68px minmax(0,1fr) auto !important;
+  column-gap:10px !important;
+  row-gap:8px !important;
+  align-items:center !important;
+}
+#products .product-thumb{
+  width:68px !important;
+  height:68px !important;
+}
+#products .product-actions{
+  grid-column:auto !important;
+  grid-row:auto !important;
+  display:flex !important;
+  flex-direction:row !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:6px !important;
+  width:auto !important;
+  margin-top:0 !important;
+  align-self:center !important;
+}
+#products .product-actions button{
+  flex:0 0 38px !important;
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  padding:0 !important;
+  border-radius:12px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#products .product-actions button svg{width:20px !important;height:20px !important}
+.brand-icon,.logo{background:transparent !important}
+.brand-icon img,.logo img,#productImagePreview img{object-fit:contain !important;background:transparent !important}
+@media(max-width:390px){
+  #products .product-card{grid-template-columns:62px minmax(0,1fr) auto !important;gap:8px !important;padding:11px 10px !important}
+  #products .product-thumb{width:62px !important;height:62px !important}
+  #products .product-actions{gap:4px !important}
+  #products .product-actions button{flex-basis:34px !important;width:34px !important;height:34px !important;min-width:34px !important;border-radius:10px !important}
+  #products .product-actions button svg{width:18px !important;height:18px !important}
+  #products .product-name{font-size:14px !important}
+  #products .product-meta,#products .product-margin{font-size:10px !important}
+  #products .product-prices{gap:5px !important;font-size:11px !important}
+}
+
+/* 2026-08-05 final fixes: brand logo + monthly header alignment */
+#monthlyCompareTable thead th,
+.monthly-compare-table thead th,
+#monthlyYoyTable thead th,
+table thead th { text-align:center !important; vertical-align:middle !important; }
+.brand-icon img,.logo img{object-fit:contain!important;background:transparent!important;}
+</style>
 </head>
 <body>
 <div class="login" id="loginView"><div class="login-box">
 <div id="loginPanel">
-<div class="logo"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-logo.png?v=20260726-monthly1"/><span class="brand-fallback" style="display:none">🍜</span></div>
+<div class="logo"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-face-logo.png?v=20260805-0014"/><span class="brand-fallback" style="display:none">미미네</span></div>
 <h1>미미네 매출관리</h1><p>매출과 지출을 간편하게 기록하세요.</p>
 <div class="notice hidden" id="loginMsg"></div>
 <div class="field"><label>이메일</label><input autocomplete="username" id="email" type="email" value="alldayworking24@gmail.com"/></div>
@@ -2597,7 +2794,7 @@ main.main{
 </div>
 </div></div>
 <div class="hidden" id="appView"><div class="app">
-<header class="header"><div class="header-inner"><div class="brand"><div class="brand-icon"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-logo.png?v=20260726-monthly1"/><span class="brand-fallback" style="display:none">🍜</span></div><div><h1>미미네 라면가게</h1><small>매출·지출 관리 · Google Sheet 기준</small></div></div><button aria-label="로그아웃" class="icon-btn" id="logoutButton" onclick="logout()" title="로그아웃"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path></svg></button></div></header>
+<header class="header"><div class="header-inner"><div class="brand"><div class="brand-icon"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-face-logo.png?v=20260805-0014"/><span class="brand-fallback" style="display:none">미미네</span></div><div><h1>미미네 라면가게</h1><small>매출·지출 관리 · Google Sheet 기준</small></div></div><button aria-label="로그아웃" class="icon-btn" id="logoutButton" onclick="logout()" title="로그아웃"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path></svg></button></div></header>
 <main class="main">
 <div class="swipe-guide">화면을 좌우로 밀어 메뉴를 이동할 수 있습니다.</div>
 <section class="panel active" id="dashboard">
@@ -2673,11 +2870,11 @@ main.main{
 </div>
 </div>
 </section>
-<section class="panel" id="sales"><div class="section-head"><h2>일매출</h2><span id="salesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">매출 흐름</div><select class="range-select" id="salesRangeSelect" onchange="setRange('sales',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="salesStart" type="date"/></div><div class="field"><label>종료일</label><input id="salesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('sales')">기간 적용</button></div><div class="period-summary"><span id="salesPeriodLabel">선택 기간</span><strong class="sale" id="salesPeriodTotal">0원</strong></div><div class="chart-detail" id="salesDetail"><div class="label" id="salesDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="salesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="salesChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span></div></div>
-<div class="section"><div class="form-card"><div class="form-grid"><div class="field"><label>날짜</label><input id="saleDate" type="date"/></div><div class="field"><label>금액</label><input id="saleAmount" inputmode="numeric" oninput="formatMoneyInput(this)" pattern="[0-9,]*" placeholder="예: 1,000" type="text" autocomplete="off"/><div class="field-error" id="saleAmountError">금액은 0원 이상 입력해 주세요.</div></div><div class="field memo"><label>메모</label><input id="saleMemo" placeholder="현금·특이사항"/></div><div class="field-error" id="saleSaveStatus" style="grid-column:1/-1"></div><button class="btn primary" id="saleSaveButton" onclick="saveSale()">등록</button></div></div></div>
+<section class="panel" id="sales"><div class="section-head"><h2>일매출</h2><span id="salesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">매출 흐름</div><select class="range-select" id="salesRangeSelect" onchange="setRange('sales',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="salesStart" type="date"/></div><div class="field"><label>종료일</label><input id="salesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('sales')">기간 적용</button></div><div class="period-summary"><span id="salesPeriodLabel">선택 기간</span><div class="period-total-wrap"><strong class="sale" id="salesPeriodTotal">0원</strong><button class="entry-add-btn sales" type="button" onclick="openEntrySheet('sales')" aria-label="매출 등록" aria-expanded="false" title="매출 등록"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div class="inline-entry-host" id="salesEntryHost"></div><div class="chart-detail" id="salesDetail"><div class="label" id="salesDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="salesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="salesChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span></div></div>
+
 <div class="section"><div class="compact-list" id="salesList"></div></div></section>
-<section class="panel" id="expenses"><div class="section-head"><h2>지출</h2><span id="expensesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">지출 흐름</div><select class="range-select" id="expensesRangeSelect" onchange="setRange('expenses',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="expensesStart" type="date"/></div><div class="field"><label>종료일</label><input id="expensesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('expenses')">기간 적용</button></div><div class="period-summary"><span id="expensesPeriodLabel">선택 기간</span><strong class="expense" id="expensesPeriodTotal">0원</strong></div><div class="chart-detail" id="expensesDetail"><div class="label" id="expensesDetailLabel">-</div><div class="values"><span>지출 <strong class="expense" id="expensesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="expensesChart"></div><div class="legend"><span><i class="dot expense"></i>지출</span></div></div>
-<div class="section"><div class="form-card expense-entry-card"><div class="expense-entry-head"><h3>지출 등록</h3><span>날짜·분류·금액 순서로 입력하세요</span></div><div class="expense-form-grid"><div class="field"><label>날짜</label><input id="expenseDate" type="date"/></div><div class="field"><label>분류</label><select id="expenseCategory" onchange="updateExpenseCardCompanyVisibility()"><option>카드</option><option>광고비</option><option>공과금</option><option>비품</option><option>소모품</option><option>수리비</option><option selected="">식자재</option><option>임대료</option><option>통신비</option><option>기타</option></select></div><div class="field expense-amount-field"><label>금액</label><input id="expenseAmount" inputmode="numeric" oninput="formatMoneyInput(this)" pattern="[0-9,]*" placeholder="예: 50,000" type="text" autocomplete="off"/><div class="field-error" id="expenseAmountError">금액을 숫자로 입력해 주세요. 0원도 등록할 수 있습니다.</div></div><div class="field expense-card-field is-hidden" id="expenseCardCompanyField"><label>카드사</label><select id="expenseCardCompany"><option value="">선택 안 함</option><option>국민카드</option><option>농협카드</option><option>롯데카드</option><option>삼성카드</option><option>신한카드</option><option>우리카드</option><option>하나카드</option><option>현대카드</option><option>기타카드</option></select></div><div class="field memo"><label>메모</label><input id="expenseMemo" placeholder="예: 얼음컵, 식자재 구입"/></div><div class="field-error expense-save-status" id="expenseSaveStatus"></div><button class="btn primary" id="expenseSaveButton" onclick="saveExpense()">지출 등록</button></div></div></div>
+<section class="panel" id="expenses"><div class="section-head"><h2>지출</h2><span id="expensesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">지출 흐름</div><select class="range-select" id="expensesRangeSelect" onchange="setRange('expenses',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="expensesStart" type="date"/></div><div class="field"><label>종료일</label><input id="expensesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('expenses')">기간 적용</button></div><div class="period-summary"><span id="expensesPeriodLabel">선택 기간</span><div class="period-total-wrap"><strong class="expense" id="expensesPeriodTotal">0원</strong><button class="entry-add-btn expense" type="button" onclick="openEntrySheet('expenses')" aria-label="지출 등록" aria-expanded="false" title="지출 등록"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div class="inline-entry-host" id="expensesEntryHost"></div><div class="chart-detail" id="expensesDetail"><div class="label" id="expensesDetailLabel">-</div><div class="values"><span>지출 <strong class="expense" id="expensesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="expensesChart"></div><div class="legend"><span><i class="dot expense"></i>지출</span></div></div>
+
 <div class="section"><div class="period-summary hidden" id="expenseListNotice"><span>최근 등록</span><strong id="expenseListNoticeText"></strong></div><div class="compact-list" id="expensesList"></div></div></section>
 <section class="panel" id="all"><div class="section-head"><h2>전체내용</h2><span id="allRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">전체 흐름</div><select class="range-select" id="allRangeSelect" onchange="setRange('all',this.value)"></select></div><div class="chart-detail" id="allDetail"><div class="label" id="allDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="allSalesValue">0원</strong></span><span>지출 <strong class="expense" id="allExpenseValue">0원</strong></span></div></div><div class="chart-wrap" id="allChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span><span><i class="dot expense"></i>지출</span></div></div><div class="section"><div class="compact-list" id="allList"></div></div></section>
 <section class="panel" id="products">
@@ -2723,7 +2920,7 @@ main.main{
 <div class="section-head" style="margin:0 0 10px"><h3 id="productFormTitle" style="margin:0;font-size:17px">새 제품 등록</h3><button class="btn ghost hidden" id="productCancelEdit" onclick="resetProductForm()">취소</button></div>
 <input id="productId" type="hidden"/>
 <div class="product-image-picker">
-<div class="product-preview default-logo" id="productImagePreview"><img alt="배경 제거된 미미네 컵라면 기본 이미지" src="mimine-logo.png?v=20260726-monthly1"/></div>
+<div class="product-preview default-logo" id="productImagePreview"><img alt="배경 제거된 미미네 컵라면 기본 이미지" src="mimine-face-logo.png?v=20260805-0014"/></div>
 <div class="custom-file premium-product-photo">
 <div class="control-label">제품 사진</div>
 <input accept="image/jpeg,image/png,image/webp,image/gif" id="productImageFile" onchange="previewProductImage(this,'gallery')" type="file"/>
@@ -2944,6 +3141,22 @@ main.main{
 <div class="notice-actions"><button class="notice-ok" onclick="closeNotice()">확인</button></div>
 </div>
 </div>
+
+<div class="entry-sheet" id="salesEntrySheet" onclick="handleEntrySheetBackdrop(event,'sales')" aria-hidden="true">
+  <div class="entry-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="salesEntryTitle">
+    <div class="entry-sheet-handle"></div>
+    <div class="entry-sheet-head"><div class="entry-sheet-title"><span class="entry-symbol sales">＋</span><div><h3 id="salesEntryTitle">매출 입력</h3><p>날짜와 금액을 입력하면 바로 반영됩니다.</p></div></div><button class="entry-sheet-close" type="button" onclick="closeEntrySheet('sales')" aria-label="닫기">×</button></div>
+    <div class="form-card"><div class="form-grid"><div class="field"><label>날짜</label><input id="saleDate" type="date"/></div><div class="field"><label>금액</label><input id="saleAmount" inputmode="numeric" oninput="formatMoneyInput(this)" pattern="[0-9,]*" placeholder="예: 1,000" type="text" autocomplete="off"/><div class="field-error" id="saleAmountError">금액은 0원 이상 입력해 주세요.</div></div><div class="field memo"><label>메모</label><input id="saleMemo" placeholder="현금·특이사항"/></div><div class="field-error" id="saleSaveStatus" style="grid-column:1/-1"></div><button class="btn primary" id="saleSaveButton" onclick="saveSale()" type="button" aria-label="매출 저장" title="매출 저장"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+  </div>
+</div>
+<div class="entry-sheet" id="expensesEntrySheet" onclick="handleEntrySheetBackdrop(event,'expenses')" aria-hidden="true">
+  <div class="entry-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="expensesEntryTitle">
+    <div class="entry-sheet-handle"></div>
+    <div class="entry-sheet-head"><div class="entry-sheet-title"><span class="entry-symbol expense">＋</span><div><h3 id="expensesEntryTitle">지출 입력</h3><p>분류와 금액을 빠르게 입력하세요.</p></div></div><button class="entry-sheet-close" type="button" onclick="closeEntrySheet('expenses')" aria-label="닫기">×</button></div>
+    <div class="form-card expense-entry-card"><div class="expense-entry-head"><h3>지출 등록</h3><span>날짜·분류·금액 순서로 입력하세요</span></div><div class="expense-form-grid"><div class="field"><label>날짜</label><input id="expenseDate" type="date"/></div><div class="field"><label>분류</label><select id="expenseCategory" onchange="updateExpenseCardCompanyVisibility()"><option>카드</option><option>광고비</option><option>공과금</option><option>비품</option><option>소모품</option><option>수리비</option><option selected="">식자재</option><option>임대료</option><option>통신비</option><option>기타</option></select></div><div class="field expense-amount-field"><label>금액</label><input id="expenseAmount" inputmode="numeric" oninput="formatMoneyInput(this)" pattern="[0-9,]*" placeholder="예: 50,000" type="text" autocomplete="off"/><div class="field-error" id="expenseAmountError">금액을 숫자로 입력해 주세요. 0원도 등록할 수 있습니다.</div></div><div class="field expense-card-field is-hidden" id="expenseCardCompanyField"><label>카드사</label><select id="expenseCardCompany"><option value="">선택 안 함</option><option>국민카드</option><option>농협카드</option><option>롯데카드</option><option>삼성카드</option><option>신한카드</option><option>우리카드</option><option>하나카드</option><option>현대카드</option><option>기타카드</option></select></div><div class="field memo"><label>메모</label><input id="expenseMemo" placeholder="예: 얼음컵, 식자재 구입"/></div><div class="field-error expense-save-status" id="expenseSaveStatus"></div><button class="btn primary" id="expenseSaveButton" onclick="saveExpense()" type="button" aria-label="지출 저장" title="지출 저장"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div>
+  </div>
+</div>
+
 <script>
 const APP_BUILD='2026-07-26-all-charts-coordinate-consistency';
 const SUPABASE_URL='https://hunoualsfmfckalwbilt.supabase.co';
@@ -4143,6 +4356,7 @@ async function saveSale(){
 
     syncDateInputs(true);
     await loadAll();
+    closeEntrySheet('sales');
 
     setTimeout(()=>{
       status.classList.remove('show');
@@ -4227,6 +4441,7 @@ async function saveExpense(){
     status.classList.add('show');
     syncDateInputs(true);
     await loadAll();
+    closeEntrySheet('expenses');
     $('expenseListNoticeText').textContent=`${expenseDate.slice(5).replace('-','.')} · ${category} · ${won(amount)}`;
     $('expenseListNotice').classList.remove('hidden');
     setTimeout(()=>{$('expensesList')?.scrollIntoView({behavior:'smooth',block:'start'});},120);
@@ -4489,10 +4704,10 @@ function renderProducts(){
         <div class="product-prices"><span class="sale-price">판매 ${won(product.sale_price)}</span><span class="purchase-price">구매 ${won(product.purchase_price)}</span></div>
         <div class="product-margin">개당 차액 ${won(margin)}</div>
       </div>
-      <div class="product-actions">
-        <button class="product-edit" onclick="openPurchasePriceHistory(${product.id})">가격 흐름</button>
-        <button class="product-edit" onclick="editProduct(${product.id})">수정</button>
-        <button class="product-delete" onclick="deleteProduct(${product.id})">삭제</button>
+      <div class="product-actions" aria-label="상품 관리">
+        <button class="product-edit" onclick="openPurchasePriceHistory(${product.id})" aria-label="가격 흐름" title="가격 흐름"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 7-8"/><path d="M14 8h5v5"/></svg></button>
+        <button class="product-edit" onclick="editProduct(${product.id})" aria-label="수정" title="수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"/></svg></button>
+        <button class="product-delete" onclick="deleteProduct(${product.id})" aria-label="삭제" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
       </div>
     </article>`;
   }).join('');
@@ -5380,31 +5595,51 @@ function openPanel(id,direction=0){
   });
 }
 
+function openEntrySheet(type){
+  const isSales=type==='sales';
+  const sheet=$(isSales?'salesEntrySheet':'expensesEntrySheet');
+  const host=$(isSales?'salesEntryHost':'expensesEntryHost');
+  if(!sheet||!host)return;
+  const wasOpen=sheet.classList.contains('show');
+  closeEntrySheet(isSales?'expenses':'sales');
+  if(wasOpen){closeEntrySheet(type);return;}
+  host.appendChild(sheet);
+  if(isSales){
+    $('saleDate').value=currentDate;
+    $('saleAmount').value='';
+    $('saleMemo').value='';
+    $('saleAmountError').classList.remove('show');
+    $('saleSaveStatus').classList.remove('show');
+  }else{
+    $('expenseDate').value=currentDate;
+    $('expenseAmount').value='';
+    $('expenseMemo').value='';
+    $('expenseAmountError').classList.remove('show');
+    $('expenseSaveStatus').classList.remove('show');
+    updateExpenseCardCompanyVisibility();
+  }
+  sheet.classList.add('show');
+  sheet.setAttribute('aria-hidden','false');
+  const btn=document.querySelector(`.entry-add-btn.${isSales?'sales':'expense'}`);
+  btn?.setAttribute('aria-expanded','true');
+}
+function closeEntrySheet(type){
+  const isSales=type==='sales';
+  const sheet=$(isSales?'salesEntrySheet':'expensesEntrySheet');
+  if(!sheet)return;
+  sheet.classList.remove('show');
+  sheet.setAttribute('aria-hidden','true');
+  const btn=document.querySelector(`.entry-add-btn.${isSales?'sales':'expense'}`);
+  btn?.setAttribute('aria-expanded','false');
+}
+function handleEntrySheetBackdrop(event,type){}
 function openTodaySalesForm(){
   openPanel('sales');
-  $('saleDate').value=currentDate;
-  $('saleAmount').value='';
-  $('saleMemo').value='';
-  $('saleAmountError').classList.remove('show');
-
-  const form=$('saleAmount').closest('.form-card');
-  setTimeout(()=>{
-    form?.scrollIntoView({behavior:'smooth',block:'center'});
-    setTimeout(()=>$('saleAmount').focus({preventScroll:true}),380);
-  },120);
+  setTimeout(()=>openEntrySheet('sales'),80);
 }
 function openTodayExpenseForm(){
   openPanel('expenses');
-  $('expenseDate').value=currentDate;
-  $('expenseAmount').value='';
-  $('expenseMemo').value='';
-  $('expenseAmountError').classList.remove('show');
-
-  const form=$('expenseAmount').closest('.form-card');
-  setTimeout(()=>{
-    form?.scrollIntoView({behavior:'smooth',block:'center'});
-    setTimeout(()=>$('expenseAmount').focus({preventScroll:true}),380);
-  },120);
+  setTimeout(()=>openEntrySheet('expenses'),80);
 }
 /* ===== 단순하고 충돌 없는 모바일 이동 ===== */
 let navSwipeStartX=0;
@@ -5488,7 +5723,10 @@ document.addEventListener('touchcancel',()=>{
 
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&$('priceHistoryModal')?.classList.contains('show'))closePriceHistory();
+  if(e.key!=='Escape')return;
+  if($('salesEntrySheet')?.classList.contains('show'))closeEntrySheet('sales');
+  else if($('expensesEntrySheet')?.classList.contains('show'))closeEntrySheet('expenses');
+  else if($('priceHistoryModal')?.classList.contains('show'))closePriceHistory();
 });
 
 
