@@ -34,7 +34,22 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
  // Include allocations outside the period for each visible event to show available balances accurately.
  let eventAllocations=[];for(let i=0;i<ids.length;i+=100)eventAllocations.push(...await pages('mimine_bank_allocations?select=*&event_id=in.('+ids.slice(i,i+100).join(',')+')&order=sale_date'));
  const devices=await db('adw_sms_devices?select=id,name,enabled,last_seen_at&order=created_at.desc');
- return reply({events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ const rules=await db('mimine_bank_rules?select=*&order=updated_at.desc');
+ const holds=await db('mimine_bank_holds?select=event_id');
+ const matching=await db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:false,p_actor:email}});
+ const matchHistory=await db('mimine_bank_audit?select=action,detail,created_at&action=eq.auto_match&order=created_at.desc&limit=10');
+ return reply({matchHistory,rules,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ }
+ case 'autoMatch':{
+ const result=await db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:true,p_actor:email}});return reply(result);
+ }
+ case 'rule':{
+ if(typeof b.payer!=='string'||!b.payer.trim()||b.payer.trim().length>100||!/^\d{2,8}$/.test(b.suffix||'')||typeof b.enabled!=='boolean')return reply({error:'입금자명과 계좌 끝자리(숫자 2~8자리)를 확인해 주세요.'},400);
+ await db('mimine_bank_rules?on_conflict=payer,account_suffix',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:{payer:b.payer.trim(),account_suffix:b.suffix,enabled:b.enabled,updated_by:email,updated_at:new Date().toISOString()}});await audit('match_rule',{payer:b.payer.trim(),suffix:b.suffix,enabled:b.enabled});return reply({ok:true});
+ }
+ case 'releaseHold':{
+ if(!uuid(b.eventId))return reply({error:'입금내역을 확인해 주세요.'},400);
+ await db('mimine_bank_holds?event_id=eq.'+b.eventId,{method:'DELETE'});await audit('release_hold',{event_id:b.eventId});return reply({ok:true});
  }
  case 'classify':{
  if(!uuid(b.eventId)||!['mimine','adw','other','unclassified'].includes(b.business)||!['settlement','customer','owner','refund','other'].includes(b.category)||String(b.note||'').length>500)return reply({error:'분류 항목을 확인해 주세요.'},400);
@@ -48,7 +63,7 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
  }
  case 'allocate':{
  if(!uuid(b.eventId)||!date(b.saleDate)||!money(b.amount))return reply({error:'입금 연결 항목을 확인해 주세요.'},400);
- await db('rpc/mimine_bank_allocate',{method:'POST',body:{p_event:b.eventId,p_date:b.saleDate,p_amount:b.amount,p_actor:email}});return reply({ok:true});
+ await db(b.amount===0?'rpc/mimine_bank_unlink':'rpc/mimine_bank_allocate',{method:'POST',body:{p_event:b.eventId,p_date:b.saleDate,...(b.amount===0?{}:{p_amount:b.amount}),p_actor:email}});return reply({ok:true});
  }
  case 'pair':{
  const token='adwsms_'+randomBytes(32).toString('base64url');await db('adw_sms_devices',{method:'POST',body:{name:String(b.name||'미미네 입금 수신폰').slice(0,60),owner_id:access[0].adw_user_id,token_hash:createHash('sha256').update(token).digest('hex'),auto_apply:false}});await audit('pair',{});return reply({ok:true,token});

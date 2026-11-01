@@ -1,0 +1,10 @@
+{
+  "name": "mimine-ramyeon",
+  "private": true,
+  "version": "2026.11.2",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tests/finance.test.cjs && node tests/bank-handler.test.mjs && node tests/auto-match-sql.test.mjs"
+  },
+  "devDependencies": {"@electric-sql/pglite": "0.5.14"}
+}

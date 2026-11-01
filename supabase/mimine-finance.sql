@@ -19,6 +19,8 @@ create table if not exists public.mimine_bank_allocations (
  event_id uuid references public.adw_sms_events(id),sale_date date references public.mimine_settlements(sale_date),
  amount bigint not null check(amount>0),updated_by text not null,updated_at timestamptz not null default now(),primary key(event_id,sale_date)
 );
+alter table public.mimine_bank_allocations add column if not exists match_source text not null default 'manual';
+alter table public.mimine_bank_allocations add column if not exists match_reason text not null default '';
 create table if not exists public.mimine_bank_audit (
  id bigint generated always as identity primary key, actor text not null,action text not null,detail jsonb not null default '{}',created_at timestamptz not null default now()
 );
@@ -33,6 +35,7 @@ grant usage,select on sequence public.mimine_bank_audit_id_seq to service_role;
 create or replace function public.mimine_bank_classify(p_event uuid,p_business text,p_category text,p_note text,p_actor text) returns void language plpgsql security invoker set search_path=pg_catalog,public as $$
 declare e public.adw_sms_events;
 begin
+ perform pg_advisory_xact_lock(7183125);
  select * into e from public.adw_sms_events where id=p_event for update;
  if not found then raise exception '입금내역이 없습니다';end if;
  if e.payment_id is not null and p_business<>'adw' then raise exception '하루온종일 수금에 연결된 입금입니다';end if;
@@ -44,6 +47,7 @@ end $$;
 create or replace function public.mimine_bank_allocate(p_event uuid,p_date date,p_amount bigint,p_actor text) returns void language plpgsql security invoker set search_path=pg_catalog,public as $$
 declare e public.adw_sms_events; c public.mimine_bank_classifications; used numeric; expected numeric;
 begin
+ perform pg_advisory_xact_lock(7183125);
  select * into e from public.adw_sms_events where id=p_event for update;if not found then raise exception '입금내역이 없습니다';end if;
  perform 1 from public.mimine_settlements where sale_date=p_date for update;if not found then raise exception '매출 정산정보를 먼저 입력해 주세요';end if;
  if p_amount=0 then
@@ -55,7 +59,7 @@ begin
  select coalesce(sum(amount),0) into used from public.mimine_bank_allocations where event_id=p_event and sale_date<>p_date;
  if used+p_amount>e.amount then raise exception '입금액을 초과해 연결할 수 없습니다';end if;
  insert into public.mimine_bank_allocations(event_id,sale_date,amount,updated_by) values(p_event,p_date,p_amount,p_actor)
- on conflict(event_id,sale_date) do update set amount=excluded.amount,updated_by=excluded.updated_by,updated_at=now();
+ on conflict(event_id,sale_date) do update set amount=excluded.amount,updated_by=excluded.updated_by,updated_at=now(),match_source='manual',match_reason='';
  end if;
  insert into public.mimine_bank_audit(actor,action,detail) values(p_actor,'allocate',jsonb_build_object('event_id',p_event,'sale_date',p_date,'amount',p_amount));
 end $$;

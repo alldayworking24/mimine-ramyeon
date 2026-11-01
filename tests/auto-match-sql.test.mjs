@@ -1,0 +1,37 @@
+// Runs the exact deployment SQL against embedded PostgreSQL (PGlite).
+// Usage: PGLITE_MODULE=/path/to/pglite/dist/index.js node tests/auto-match-sql.test.mjs
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const {PGlite}=await import(process.env.PGLITE_MODULE||'@electric-sql/pglite');
+const db=new PGlite();
+await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;
+create table auth.users(id uuid primary key,email text);create table public.app_users(user_id uuid,role text,is_active boolean);
+create table public.adw_sms_events(id uuid primary key,amount bigint,payer text,occurred_at timestamptz,received_at timestamptz default now(),status text,payment_id uuid,account_suffix text);
+`);
+await db.exec(await readFile(new URL('../supabase/mimine-finance.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/mimine-auto-match.sql',import.meta.url),'utf8'));
+const id=n=>`11111111-1111-4111-8111-${String(n).padStart(12,'0')}`;
+const scalar=async(sql,params=[])=>Object.values((await db.query(sql,params)).rows[0])[0];
+const event=async(n,amount=98000,payer='정산사',suffix='1234',payment=null)=>db.query(`insert into adw_sms_events(id,amount,payer,occurred_at,account_suffix,payment_id) values($1,$2,$3,'2026-11-02T01:00Z',$4,$5)`,[id(n),amount,payer,suffix,payment]);
+const sale=async(d,amount=100000)=>db.query(`insert into mimine_settlements(sale_date,card_amount,cash_amount,other_amount,fee_amount,due_date,updated_by) values($1,$2,0,0,2000,'2026-11-02','test')`,[d,amount]);
+const run=async(apply=true)=>scalar('select mimine_bank_auto_match($1,$2)',[apply,'test']);
+await db.exec(`insert into mimine_bank_rules(payer,account_suffix,enabled,updated_by) values('정산사','1234',true,'test')`);
+await sale('2026-11-01');await event(1);
+assert.equal((await run(false)).ready,1);assert.equal(await scalar('select count(*)::int from mimine_bank_allocations'),0);
+assert.equal((await run()).matched,1);assert.equal((await run()).matched,0);
+assert.equal(await scalar('select match_source from mimine_bank_allocations'),'auto');
+await assert.rejects(db.query("update adw_sms_events set payment_id='22222222-2222-4222-8222-222222222222' where id=$1",[id(1)]),/미미네 정산/);
+await db.query('select mimine_bank_unlink($1,$2,$3)',[id(1),'2026-11-01','test']);assert.equal((await run()).matched,0);
+await db.exec('delete from mimine_bank_holds');await event(2);assert.equal((await run()).matched,0);assert.equal((await run()).results[0].status,'ambiguous');
+await db.query('delete from adw_sms_events where id=$1',[id(2)]);await sale('2026-10-31');assert.equal((await run()).matched,0);
+await db.exec("delete from mimine_settlements where sale_date='2026-10-31'");
+await db.exec("update adw_sms_events set account_suffix='9999'");assert.equal((await run()).matched,0);
+await db.exec("update adw_sms_events set account_suffix='1234',payer='다른사업'");assert.equal((await run()).matched,0);
+await db.exec("update adw_sms_events set payer='정산사',payment_id='22222222-2222-4222-8222-222222222222'");assert.equal((await run()).matched,0);
+await db.exec("update adw_sms_events set payment_id=null,amount=50000");assert.equal((await run()).matched,0);
+await db.exec("update adw_sms_events set amount=98000,occurred_at='2026-11-03T01:00Z'");assert.equal((await run()).matched,0);
+await db.exec("update adw_sms_events set occurred_at='2026-11-02T01:00Z';update mimine_bank_rules set enabled=false");assert.equal((await run()).matched,0);
+await db.exec("update mimine_bank_rules set enabled=true;update mimine_bank_classifications set business='adw'");assert.equal((await run()).matched,0);
+assert.equal(await scalar("select has_function_privilege('anon','mimine_bank_auto_match(boolean,text)','EXECUTE')"),false);
+console.log('Auto matching SQL passed: preview, exact unique match, repeat, hold, ambiguous events/dates, account/payer, ADW, partial, date, disabled rule, service-only access.');
+await db.close();

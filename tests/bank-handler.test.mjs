@@ -26,3 +26,10 @@ assert.equal((await handler(req({action:'settlement',saleDate:'2026-10-27',card:
 assert.equal((await handler(req({action:'allocate',eventId:'bad',saleDate:'2026-10-27',amount:1}))).status,400);
 assert.equal((await handler(req({action:'classify',eventId:'11111111-1111-4111-8111-111111111111',business:'mimine',category:'settlement'}))).status,200);
 console.log('Bank handler: authorization, inactive user, validation, real-data response, settlement total consistency passed.');
+assert.equal((await handler(req({action:'rule',payer:'정산사',suffix:'12',enabled:true}))).status,200);
+assert.equal((await handler(req({action:'rule',payer:'',suffix:'12',enabled:true}))).status,400);
+assert.equal((await handler(req({action:'rule',payer:'정산사',suffix:'xx',enabled:true}))).status,400);
+assert.equal((await handler(req({action:'autoMatch'}))).status,200);
+assert.equal((await handler(req({action:'releaseHold',eventId:'bad'}))).status,400);
+assert.equal((await handler(req({action:'allocate',eventId:'11111111-1111-4111-8111-111111111111',saleDate:'2026-10-27',amount:0}))).status,200);
+console.log('New actions: automatic match, rule validation, hold release validation, safe unlink passed.');
