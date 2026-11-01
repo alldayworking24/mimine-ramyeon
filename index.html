@@ -2,6 +2,7 @@
 
 <html lang="ko">
 <head>
+<script src="/allbase-route.js" defer></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover" name="viewport"/>
 <title>미미네 매출관리</title>
@@ -9,7 +10,7 @@
 <style>
 :root{
   --brand:#bd746e;
-  --brand-dark:#9f5e59;
+  --brand-dark:#800020;
   --brand-soft:#fbf2f1;
   --bg:#f6f4f3;
   --card:#ffffff;
@@ -2665,6 +2666,15 @@ body.entry-sheet-open{overflow:auto;touch-action:auto}
 .brand-icon,.logo{background:transparent !important;border-color:transparent !important;box-shadow:none !important;}
 .brand-icon img,.logo img{display:block;width:100%;height:100%;object-fit:contain;background:transparent !important;}
 
+.expenses-monthly-yoy .diff-up{color:var(--danger)}
+.expenses-monthly-yoy .diff-down{color:var(--profit)}
+.daily-average-compare{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.average-row{display:grid;grid-template-columns:58px minmax(0,1fr) 100px;gap:10px;align-items:center;margin:12px 0;font-size:13px}.average-row strong{text-align:right;font-variant-numeric:tabular-nums}.average-track{height:14px;background:#f4efed;border-radius:7px;overflow:hidden}.average-bar{height:100%;border-radius:7px}.average-bar.current{background:var(--brand-dark)}.average-bar.previous{background:#c6b6b1}
+.insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.insight-grid .card span{display:block;font-size:12px;color:var(--muted)}.insight-grid strong{display:block;font-size:20px;margin-top:7px;overflow-wrap:anywhere}.goal-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.goal-form label{grid-column:1/-1;font-size:12px}.goal-form input{min-width:0;width:100%;box-sizing:border-box}.goal-form button,.missing-dates button,.missing-summary{min-height:44px}.missing-summary{width:100%;white-space:normal}#monthlyGoalProgress{width:100%;height:14px;margin:12px 0;accent-color:var(--sales)}#monthlyGoalSummary{display:block;overflow-wrap:anywhere}.missing-dates{display:flex;flex-wrap:wrap;gap:8px}#missingSalesCard{scroll-margin-top:80px}.section-head{flex-wrap:wrap}.section-head span,.compare-total span,.hint{overflow-wrap:anywhere}.compare-total-grid{min-width:0}.compare-total{min-width:0}.compare-diff{flex-wrap:wrap}.chart-detail .values{flex-wrap:wrap}.legend{flex-wrap:wrap}.expense-category-comparison .compare-table-wrap{overflow-x:auto}.expense-category-comparison .compare-table{min-width:520px}.expense-category-comparison td:first-child{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:480px){.insight-grid{grid-template-columns:1fr}.insight-grid .card{display:flex;align-items:center;justify-content:space-between;gap:10px}.insight-grid strong{margin:0}.compare-total-grid{grid-template-columns:1fr}.chart-detail{align-items:flex-start;flex-direction:column;gap:8px}.chart-detail .values{justify-content:flex-start}.section-head span{font-size:11px}.legend{justify-content:flex-start}.average-row{grid-template-columns:58px minmax(0,1fr) 90px;gap:6px}.compare-diff strong{font-size:14px}}
+@media(max-width:600px){.chart-wrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}.chart-wrap .chart-svg{width:max(720px,calc(var(--chart-points,12)*40px));min-width:720px;max-width:none;height:220px}.chart-wrap::after{content:''}.legend{font-size:11px}}
+#allList .ledger-head,#allList .ledger-summary{display:grid;grid-template-columns:100px minmax(0,1fr) minmax(0,1fr) 18px;gap:8px;align-items:center}#allList .ledger-head{padding:12px 0;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}#allList .ledger-head span:nth-child(2),#allList .ledger-head span:nth-child(3),#allList .ledger-summary strong{text-align:right}#allList .ledger-summary{list-style:none;cursor:pointer;min-height:54px;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}#allList .ledger-summary::-webkit-details-marker{display:none}#allList .ledger-day{border-bottom:1px solid var(--line)}#allList .ledger-chevron{text-align:center}#allList .ledger-day[open] .ledger-chevron{transform:rotate(180deg)}#allList .ledger-details{padding:4px 10px 12px;background:#faf7f5;border-radius:12px}#allList .ledger-entry{padding:8px 0}#allList .ledger-entry+.ledger-entry{border-top:1px solid var(--line)}#allList .ledger-entry-top{display:flex;align-items:center;justify-content:space-between;gap:8px}#allList .ledger-memo{font-size:12px;color:var(--muted);overflow-wrap:anywhere}#allList .ledger-entry .action{min-width:40px;min-height:40px}
+@media(max-width:480px){#allList .ledger-head,#allList .ledger-summary{grid-template-columns:76px minmax(0,1fr) minmax(0,1fr) 12px;gap:4px}#allList .ledger-summary{font-size:11px}#allList .ledger-date{font-size:11px}#allList .ledger-head{font-size:11px}}
 </style>
 <meta content="#c9776d" name="theme-color"/>
 <link href="favicon-32.png?v=20260805-0014" rel="icon" sizes="32x32" type="image/png"/>
@@ -2817,7 +2827,10 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 <div class="hero-top"><div><div class="hero-title">이번 달 순수익</div><div class="hero-value" id="monthProfit">0원</div></div><div class="hero-badge" id="monthStatus">이번 달 현황</div></div>
 <div class="hero-row"><div class="hero-mini"><span>이번 달 매출</span><strong id="monthSales">0원</strong></div><div class="hero-mini"><span>이번 달 지출</span><strong id="monthExpenses">0원</strong></div></div>
 </div>
-<div class="section"><div class="section-head"><h2>작년 대비 매출 비교</h2><span id="compareRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">현재 기간과 작년 같은 기간 비교</div><select class="range-select" id="dashboardRangeSelect" onchange="setRange('dashboard',this.value)"></select></div><div class="chart-detail" id="compareDetail"><div class="label" id="compareDetailLabel">-</div><div class="values"><span>올해 <strong class="sale" id="compareCurrentValue">0원</strong></span><span>작년 <strong id="comparePrevValue">0원</strong></span></div></div><div class="chart-wrap" id="compareChart"></div><div class="legend"><span><i class="dot compare"></i>올해 매출</span><span><i class="dot compare-prev"></i>작년 매출</span></div></div></div>
+<div class="section insight-summary"><div class="section-head"><h2>이번 달 하루 평균</h2><span id="dailyBalancePeriod"></span></div><div class="insight-grid"><div class="card"><span>매출</span><strong class="sale" id="dailyBalanceSales"></strong></div><div class="card"><span>지출</span><strong class="expense" id="dailyBalanceExpenses"></strong></div><div class="card"><span>남는 금액</span><strong id="dailyBalanceNet"></strong></div></div><p class="hint">오늘까지의 매출 − 지출 기준 단순 수지입니다. 거래 없는 날도 포함합니다.</p></div>
+<div class="section card hidden" id="dashboardMissingSalesCard"><div class="section-head"><h2>이번 달 매출 입력</h2></div><button type="button" class="btn ghost missing-summary" id="missingSalesSummary" onclick="openMissingSales()"></button><p class="hint">어제까지 확인합니다. 0원을 입력한 날은 입력 완료로 봅니다.</p></div>
+<div class="section card"><div class="section-head"><h2>월 목표 매출</h2><span id="monthlyGoalMonth"></span></div><form class="goal-form" onsubmit="event.preventDefault();saveMonthlyGoal()"><label for="monthlyGoalInput">목표 금액 (원)</label><input id="monthlyGoalInput" type="text" inputmode="numeric" oninput="formatMoneyInput(this)" placeholder="예: 3,000,000"/><button type="submit" class="btn primary">저장</button></form><div class="hint" id="monthlyGoalStatus" role="status"></div><progress id="monthlyGoalProgress" max="100" value="0" aria-label="월 목표 매출 달성률"></progress><strong id="monthlyGoalSummary"></strong><p class="hint" id="monthlyGoalRemaining"></p><p class="hint">목표는 이 기기·브라우저에만 저장됩니다. 비워서 저장하면 해제됩니다.</p></div>
+<div class="section"><div class="section-head"><h2>작년 대비 매출 비교</h2><span id="compareRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">현재 기간과 작년 같은 기간 비교</div><select class="range-select" id="dashboardRangeSelect" onchange="setRange('dashboard',this.value)"></select></div><div class="chart-detail" id="compareDetail"><div class="label" id="compareDetailLabel">-</div><div class="values"><span>선택 기간 <strong class="sale" id="compareCurrentValue">0원</strong></span><span>전년 동기 <strong id="comparePrevValue">0원</strong></span></div></div><div class="compare-diff"><span>전년 동기 대비 증감</span><strong id="dashboardCompareDifference"></strong></div><div class="chart-wrap" id="compareChart"></div><div class="daily-average-compare" role="img" aria-label="올해와 작년 하루 평균 매출 비교" id="compareAverageChart"><div class="hint">하루 평균 매출 · 매출 없는 날 포함</div><div class="average-row"><span>선택 기간</span><div class="average-track"><div class="average-bar current" id="compareAverageCurrentBar"></div></div><strong id="compareAverageCurrent">0원</strong></div><div class="average-row"><span>전년 동기</span><div class="average-track"><div class="average-bar previous" id="compareAveragePreviousBar"></div></div><strong id="compareAveragePrevious">0원</strong></div><div class="hint" id="compareAverageNote"></div></div><div class="legend"><span><i class="dot compare"></i><span id="compareCurrentLegend">선택 기간 매출</span></span><span><i class="dot compare-prev"></i><span id="comparePreviousLegend">전년 동기 매출</span></span></div></div></div>
 <div class="section"><div class="quick"><button class="sales" onclick="openPanel('sales')">＋ 매출 등록</button><button class="expense" onclick="openPanel('expenses')">＋ 지출 등록</button></div></div>
 <div class="section"><div class="section-head"><h2>매출·지출 흐름</h2><span id="dashRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">추이를 부드럽게 확인하세요</div><select class="range-select" id="dashRangeSelect" onchange="setRange('dashboard',this.value)"></select></div><div class="chart-detail" id="dashboardDetail"><div class="label" id="dashboardDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="dashboardSalesValue">0원</strong></span><span>지출 <strong class="expense" id="dashboardExpenseValue">0원</strong></span></div></div><div class="chart-wrap" id="dashChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span><span><i class="dot expense"></i>지출</span></div></div></div>
 <div class="section dashboard-monthly-yoy">
@@ -2872,10 +2885,50 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 </section>
 <section class="panel" id="sales"><div class="section-head"><h2>일매출</h2><span id="salesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">매출 흐름</div><select class="range-select" id="salesRangeSelect" onchange="setRange('sales',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="salesStart" type="date"/></div><div class="field"><label>종료일</label><input id="salesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('sales')">기간 적용</button></div><div class="period-summary"><span id="salesPeriodLabel">선택 기간</span><div class="period-total-wrap"><strong class="sale" id="salesPeriodTotal">0원</strong><button class="entry-add-btn sales" type="button" onclick="openEntrySheet('sales')" aria-label="매출 등록" aria-expanded="false" title="매출 등록"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div class="inline-entry-host" id="salesEntryHost"></div><div class="chart-detail" id="salesDetail"><div class="label" id="salesDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="salesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="salesChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span></div></div>
 
+<div class="section sales-monthly-yoy">
+<div class="section-head"><h2>월별 매출 비교</h2><span id="salesMonthlyYoyNote">당월은 오늘까지 비교</span></div>
+<div class="yoy-card">
+<div class="compare-table-wrap">
+<table class="compare-table">
+<thead>
+<tr><th>월</th><th id="salesMonthlyPrevYearHead">2025년</th><th id="salesMonthlyCurrentYearHead">2026년</th><th>차이</th></tr>
+</thead>
+<tbody id="salesMonthlyYoyTableBody">
+<tr><td colspan="4" style="text-align:center;color:var(--muted)">월별 매출을 계산하고 있습니다.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section card" id="missingSalesCard"><div class="section-head"><h2>매출 미입력 날짜</h2></div><p class="hint">날짜를 누르면 해당 날짜의 매출을 입력할 수 있습니다.</p><div id="missingSalesDates" class="missing-dates"></div></div><div class="section sales-period-comparison">
+<div class="section-head"><h2>작년 같은 기간 매출 비교</h2></div>
+<div class="yoy-card">
+<div class="compare-total-grid">
+<div class="compare-total"><span id="salesCompareCurrentLabel">선택 기간 매출</span><strong class="sale" id="salesCompareCurrent">0원</strong></div>
+<div class="compare-total"><span id="salesComparePreviousLabel">전년 동기 매출</span><strong id="salesComparePrevious">0원</strong></div>
+</div>
+<div class="compare-diff"><span>차이 (선택 기간 − 전년 동기)</span><strong id="salesCompareDifference" class="flat">0원</strong></div>
+<div class="hint" id="salesCompareNote"></div>
+</div></div>
 <div class="section"><div class="compact-list" id="salesList"></div></div></section>
 <section class="panel" id="expenses"><div class="section-head"><h2>지출</h2><span id="expensesRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">지출 흐름</div><select class="range-select" id="expensesRangeSelect" onchange="setRange('expenses',this.value)"></select></div><div class="period-filter"><div class="field"><label>시작일</label><input id="expensesStart" type="date"/></div><div class="field"><label>종료일</label><input id="expensesEnd" type="date"/></div><button class="btn ghost" onclick="applyCustomRange('expenses')">기간 적용</button></div><div class="period-summary"><span id="expensesPeriodLabel">선택 기간</span><div class="period-total-wrap"><strong class="expense" id="expensesPeriodTotal">0원</strong><button class="entry-add-btn expense" type="button" onclick="openEntrySheet('expenses')" aria-label="지출 등록" aria-expanded="false" title="지출 등록"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div><div class="inline-entry-host" id="expensesEntryHost"></div><div class="chart-detail" id="expensesDetail"><div class="label" id="expensesDetailLabel">-</div><div class="values"><span>지출 <strong class="expense" id="expensesValueDetail">0원</strong></span></div></div><div class="chart-wrap" id="expensesChart"></div><div class="legend"><span><i class="dot expense"></i>지출</span></div></div>
 
-<div class="section"><div class="period-summary hidden" id="expenseListNotice"><span>최근 등록</span><strong id="expenseListNoticeText"></strong></div><div class="compact-list" id="expensesList"></div></div></section>
+<div class="section expenses-monthly-yoy">
+<div class="section-head"><h2>월별 지출 비교</h2><span id="expenseMonthlyYoyNote">당월은 오늘까지 비교</span></div>
+<div class="yoy-card">
+<div class="compare-table-wrap">
+<table class="compare-table">
+<thead>
+<tr><th>월</th><th id="expenseMonthlyPrevYearHead">2025년</th><th id="expenseMonthlyCurrentYearHead">2026년</th><th>차이 (올해−작년)</th></tr>
+</thead>
+<tbody id="expenseMonthlyYoyTableBody">
+<tr><td colspan="4" style="text-align:center;color:var(--muted)">월별 지출을 계산하고 있습니다.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="section card expense-category-comparison"><div class="section-head"><h2>지출 항목별 비교</h2><span id="categoryComparePeriod"></span></div><p class="hint">이번 달은 오늘까지, 지난달도 같은 날짜까지 비교합니다. 표는 좌우로 넘겨 볼 수 있습니다.</p><div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>항목</th><th>지난달</th><th>이번 달</th><th>증감</th></tr></thead><tbody id="categoryCompareBody"></tbody></table></div></div><div class="section"><div class="period-summary hidden" id="expenseListNotice"><span>최근 등록</span><strong id="expenseListNoticeText"></strong></div><div class="compact-list" id="expensesList"></div></div></section>
 <section class="panel" id="all"><div class="section-head"><h2>전체내용</h2><span id="allRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">전체 흐름</div><select class="range-select" id="allRangeSelect" onchange="setRange('all',this.value)"></select></div><div class="chart-detail" id="allDetail"><div class="label" id="allDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="allSalesValue">0원</strong></span><span>지출 <strong class="expense" id="allExpenseValue">0원</strong></span></div></div><div class="chart-wrap" id="allChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span><span><i class="dot expense"></i>지출</span></div></div><div class="section"><div class="compact-list" id="allList"></div></div></section>
 <section class="panel" id="products">
 
@@ -3076,9 +3129,9 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 </section>
 </main>
 <nav class="bottom-nav">
-<button class="tab active" data-panel="dashboard" onclick="openPanel('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>대시보드</button>
 <button class="tab" data-panel="sales" onclick="openPanel('sales')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 19V9"></path><path d="M10 19V5"></path><path d="M16 19v-7"></path><path d="M22 19V2"></path></svg>일매출</button>
 <button class="tab" data-panel="expenses" onclick="openPanel('expenses')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path></svg>지출</button>
+<button class="tab active" data-panel="dashboard" onclick="openPanel('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>대시보드</button>
 <button class="tab" data-panel="products" onclick="openPanel('products')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 7h16v13H4z"></path><path d="M8 7V4h8v3"></path><path d="M4 11h16"></path></svg>상품관리</button>
 <button class="tab" data-panel="all" onclick="openPanel('all')"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>전체내용</button>
 </nav>
@@ -3509,6 +3562,7 @@ async function showApp(knownSession=null){
 
   $('loginView').classList.add('hidden');
   $('appView').classList.remove('hidden');
+  openPanel('dashboard');
   syncDateInputs(true);
 
   const d30=new Date(currentDate+'T00:00:00');
@@ -3690,7 +3744,7 @@ async function loadAll(showBanner=false){
 }
 
 function render(){const t=currentDate,m=t.slice(0,7),ly=oneYearAgo(t);const todaySales=sum(sales.filter(x=>x.sale_date===t)),todayExpenses=sum(expenses.filter(x=>x.expense_date===t)),lastYearSales=sum(sales.filter(x=>x.sale_date===ly)),monthSales=sum(sales.filter(x=>x.sale_date.startsWith(m))),monthExpenses=sum(expenses.filter(x=>x.expense_date.startsWith(m))),profit=monthSales-monthExpenses,diff=todaySales-lastYearSales,pct=lastYearSales===0?(todaySales===0?0:null):(diff/lastYearSales*100);
-$('todaySales').textContent=won(todaySales);$('todayExpenses').textContent=won(todayExpenses);$('monthSales').textContent=won(monthSales);$('monthExpenses').textContent=won(monthExpenses);$('monthProfit').textContent=(profit<0?'-':'')+won(Math.abs(profit));$('monthProfit').className='hero-value '+(profit<0?'profit-negative':'profit-positive');$('monthStatus').textContent=profit<0?'지출이 더 많습니다':'순이익이 플러스입니다';$('yoyTodaySales').textContent=won(todaySales);$('yoyLastSales').textContent=won(lastYearSales);$('yoyDateText').textContent=md(ly);const y=$('yoyChange');y.textContent=(diff>0?'+':'')+won(diff)+(pct===null?' (신규)':` (${pct>0?'+':''}${pct.toFixed(1)}%)`);y.className=diff>0?'up':diff<0?'down':'flat';renderDueReminders();renderRangeControls();renderAllCharts();renderMonthlyYoy();renderYoySummary();renderLists()}
+$('todaySales').textContent=won(todaySales);$('todayExpenses').textContent=won(todayExpenses);$('monthSales').textContent=won(monthSales);$('monthExpenses').textContent=won(monthExpenses);$('monthProfit').textContent=(profit<0?'-':'')+won(Math.abs(profit));$('monthProfit').className='hero-value '+(profit<0?'profit-negative':'profit-positive');$('monthStatus').textContent=profit<0?'지출이 더 많습니다':'순이익이 플러스입니다';$('yoyTodaySales').textContent=won(todaySales);$('yoyLastSales').textContent=won(lastYearSales);$('yoyDateText').textContent=md(ly);const y=$('yoyChange');y.textContent=(diff>0?'+':'')+won(diff)+(pct===null?' (신규)':` (${pct>0?'+':''}${pct.toFixed(1)}%)`);y.className=diff>0?'up':diff<0?'down':'flat';renderBusinessInsights();renderDueReminders();renderRangeControls();renderAllCharts();renderMonthlyYoy();renderExpenseMonthlyYoy();renderYoySummary();renderLists()}
 function renderRangeControls(){
   ['dashboard','sales','expenses','all'].forEach(type=>{
     const ids=type==='dashboard'?['dashboardRangeSelect','dashRangeSelect']:[type+'RangeSelect'];
@@ -3749,44 +3803,38 @@ function buildSeries(key,type=null){const {start,end}=getBounds(key,type);const 
   expenses.filter(x=>inRange(x.expense_date,key,type)).forEach(x=>{const k=monthly?x.expense_date.slice(0,7):x.expense_date;if(map.has(k)) map.get(k).e += Number(x.amount)});
   let arr=[...map.values()]; if(arr.length>31&&!monthly){const step=Math.ceil(arr.length/31),group=[];for(let i=0;i<arr.length;i+=step){const g=arr.slice(i,i+step);group.push({key:g[0].key,label:g[0].label,s:g.reduce((a,v)=>a+v.s,0),e:g.reduce((a,v)=>a+v.e,0)})}arr=group} return arr;
 }
+function comparePreviousDate(value){
+  const [year,month,day]=value.split('-').map(Number);
+  return [year-1,String(month).padStart(2,'0'),String(Math.min(day,new Date(year-1,month,0).getDate())).padStart(2,'0')].join('-');
+}
+function compareDayCount(start,end){return Math.max(1,Math.round((Date.parse(end+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000)+1)}
+function comparePeriod(key){
+  const bounds=getBounds(key,'sales');
+  const end=dateISO(bounds.end);
+  const dates=sales.map(row=>row.sale_date).filter(date=>date&&date<=end).sort();
+  const start=bounds.start?dateISO(bounds.start):(dates[0]||end);
+  return {start,end,previousStart:comparePreviousDate(start),previousEnd:comparePreviousDate(end)};
+}
 function buildCompareSeries(key){
-  const {start,end}=getBounds(key);
-  const allDates=sales.map(x=>x.sale_date).sort();
-  let from=start?new Date(start):(allDates.length?new Date(allDates[0]+'T00:00:00'):new Date(currentDate+'T00:00:00'));
-  from.setHours(0,0,0,0);
-  const diffDays=Math.max(1,Math.round((end-from)/86400000)+1);
-  const selectedRange=ranges.find(r=>r.key===key); const monthly=diffDays>62;
-  const arr=[];
-  const cutoffDay=end.getDate();
-  const currentMonth=`${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}`;
-  if(monthly){
-    let d=new Date(from.getFullYear(),from.getMonth(),1);
-    const last=new Date(end.getFullYear(),end.getMonth(),1);
-    while(d<=last){
-      const currentKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const prevDate=new Date(d); prevDate.setFullYear(prevDate.getFullYear()-1);
-      const prevKey=`${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
-      arr.push({label:`${d.getMonth()+1}월`,cur:0,prev:0,currentKey,prevKey,partial:currentKey===currentMonth});
-      d.setMonth(d.getMonth()+1);
-    }
-    sales.forEach(x=>arr.forEach(p=>{
-      if(monthKeyFromDate(x.sale_date)===p.currentKey && (!p.partial || Number(x.sale_date.slice(8,10))<=cutoffDay)) p.cur+=Number(x.amount);
-      if(monthKeyFromDate(x.sale_date)===p.prevKey && (!p.partial || Number(x.sale_date.slice(8,10))<=cutoffDay)) p.prev+=Number(x.amount);
-    }));
-  }else{
-    for(let i=0;i<diffDays;i++){
-      const curDate=new Date(from); curDate.setDate(from.getDate()+i);
-      const prevDate=new Date(curDate); prevDate.setFullYear(prevDate.getFullYear()-1);
-      arr.push({label:`${curDate.getMonth()+1}/${curDate.getDate()}`,cur:0,prev:0,currentKey:dateISO(curDate),prevKey:dateISO(prevDate),partial:false});
-    }
-    sales.forEach(x=>arr.forEach(p=>{if(x.sale_date===p.currentKey)p.cur+=Number(x.amount);if(x.sale_date===p.prevKey)p.prev+=Number(x.amount)}));
+  const period=comparePeriod(key);
+  const days=compareDayCount(period.start,period.end),monthly=days>62;
+  const rows=[];
+  let cursor=period.start,previousLast=null;
+  while(cursor<=period.end){
+    const d=new Date(cursor+'T00:00:00');
+    let bucketEnd;
+    if(monthly) bucketEnd=dateISO(new Date(d.getFullYear(),d.getMonth()+1,0));
+    else bucketEnd=cursor;
+    if(bucketEnd>period.end)bucketEnd=period.end;
+    let previousStart=comparePreviousDate(cursor);
+    const previousEnd=comparePreviousDate(bucketEnd);
+    if(previousLast&&previousStart<=previousLast)previousStart=addDays(previousLast,1);
+    const total=(from,to)=>sales.filter(row=>row.sale_date>=from&&row.sale_date<=to).reduce((sum,row)=>sum+Number(row.amount||0),0);
+    rows.push({label:monthly?cursor.slice(0,7).replace('-','.') : cursor.replaceAll('-','.'),cur:total(cursor,bucketEnd),prev:total(previousStart,previousEnd),partial:bucketEnd===period.end});
+    previousLast=previousEnd;
+    cursor=addDays(bucketEnd,1);
   }
-  if(arr.length>31&&!monthly){
-    const step=Math.ceil(arr.length/31),group=[];
-    for(let i=0;i<arr.length;i+=step){const g=arr.slice(i,i+step);group.push({label:g[0].label,cur:g.reduce((a,v)=>a+v.cur,0),prev:g.reduce((a,v)=>a+v.prev,0),partial:false})}
-    return group;
-  }
-  return arr.map(({label,cur,prev,partial})=>({label,cur,prev,partial}));
+  return rows;
 }
 function niceScale(maxVal,minVal=0, zeroBase=true){let min=zeroBase?0:minVal, max=Math.max(maxVal, min+1); if(!zeroBase){const span=Math.max(1,max-min); min=Math.max(0,min-span*0.12); max=max+span*0.12}else{max=max*1.08} const span=max-min; const rough=span/4; const pow=Math.pow(10,Math.floor(Math.log10(Math.max(rough,1)))); const norm=rough/pow; const step=(norm<=1?1:norm<=2?2:norm<=5?5:10)*pow; const niceMin=zeroBase?0:Math.floor(min/step)*step; const niceMax=Math.ceil(max/step)*step; return {min:niceMin,max:niceMax,step}}
 function smoothPath(points){
@@ -3858,7 +3906,21 @@ function activeRows(type){
   return rows.filter(x=>inRange(x[dateField],rangeState[type],type));
 }
 function renderChartFor(type){const data=buildSeries(rangeState[type],type); chartStore[type]=data; if(selectedPoint[type]==null||selectedPoint[type]<0||selectedPoint[type]>=data.length) selectedPoint[type]=Math.max(0,data.length-1); const id=type==='dashboard'?'dashChart':type+'Chart'; let series=[]; if(type==='sales') series=[{field:'s',line:'line-sales',point:'point-sales',area:'area-sales'}]; else if(type==='expenses') series=[{field:'e',line:'line-expense',point:'point-expense',area:'area-expense'}]; else series=[{field:'s',line:'line-sales',point:'point-sales',area:'area-sales'},{field:'e',line:'line-expense',point:'point-expense',area:'area-expense'}]; const box=$(id); box.classList.add('chart-daily'); box.style.setProperty('--chart-points',data.length); box.innerHTML=makeChartSvg(type,data,series,true); updateChartDetail(type) }
-function renderCompareChart(){const data=buildCompareSeries(rangeState.dashboard);chartStore.compare=data;if(selectedPoint.compare==null||selectedPoint.compare<0||selectedPoint.compare>=data.length) selectedPoint.compare=Math.max(0,data.length-1);const box=$('compareChart');box.classList.add('chart-daily');box.style.setProperty('--chart-points',data.length);box.innerHTML=makeChartSvg('compare',data,[{field:'cur',line:'line-compare',point:'point-compare'},{field:'prev',line:'line-compare-prev',point:'point-compare-prev'}],true);updateChartDetail('compare')}
+function renderCompareDailyAverage(){
+  const {start,end,previousStart,previousEnd}=comparePeriod(rangeState.dashboard);
+  const currentDays=compareDayCount(start,end),previousDays=compareDayCount(previousStart,previousEnd);
+  const data=chartStore.compare||[];
+  const current=data.reduce((sum,row)=>sum+row.cur,0)/currentDays;
+  const previous=data.reduce((sum,row)=>sum+row.prev,0)/previousDays;
+  const maximum=Math.max(current,previous,1);
+  $('compareAverageCurrent').textContent=won(current);
+  $('compareAveragePrevious').textContent=won(previous);
+  $('compareAverageCurrentBar').style.width=`${current/maximum*100}%`;
+  $('compareAveragePreviousBar').style.width=`${previous/maximum*100}%`;
+  $('compareAverageNote').textContent=`선택 기간 ${start}~${end} (${currentDays}일) · 전년 동기 ${previousStart}~${previousEnd} (${previousDays}일)`;
+  $('compareAverageChart').setAttribute('aria-label',`하루 평균 매출: 선택 기간 ${won(current)}, 전년 동기 ${won(previous)}. 매출 없는 날 포함`);
+}
+function renderCompareChart(){const data=buildCompareSeries(rangeState.dashboard);chartStore.compare=data;if(selectedPoint.compare==null||selectedPoint.compare<0||selectedPoint.compare>=data.length) selectedPoint.compare=Math.max(0,data.length-1);const box=$('compareChart');box.classList.add('chart-daily');box.style.setProperty('--chart-points',data.length);box.innerHTML=makeChartSvg('compare',data,[{field:'cur',line:'line-compare',point:'point-compare'},{field:'prev',line:'line-compare-prev',point:'point-compare-prev'}],true);updateChartDetail('compare');renderCompareDailyAverage()}
 function renderAllCharts(){renderChartFor('dashboard');renderCompareChart();renderChartFor('sales');renderChartFor('expenses');renderChartFor('all')}
 function selectPoint(chartKey,index){selectedPoint[chartKey]=index; if(chartKey==='compare') renderCompareChart(); else renderChartFor(chartKey)}
 function updateChartDetail(chartKey){
@@ -3867,28 +3929,17 @@ function updateChartDetail(chartKey){
   const item=data[Math.min(selectedPoint[chartKey],data.length-1)]||data[data.length-1];
 
   if(chartKey==='compare'){
-    const bounds=getBounds(rangeState.dashboard,'sales');
-    const endDate=dateISO(bounds.end);
-    let startDate;
-
-    if(bounds.start){
-      startDate=dateISO(bounds.start);
-    }else{
-      const recorded=sales
-        .map(x=>x.sale_date)
-        .filter(Boolean)
-        .sort();
-      startDate=recorded[0]||endDate;
-    }
-
-    const currentTotal=data.reduce((a,v)=>a+Number(v.cur||0),0);
-    const previousTotal=data.reduce((a,v)=>a+Number(v.prev||0),0);
-
-    const startLabel=startDate.slice(5).replace('-','/');
-    const endLabel=endDate.slice(5).replace('-','/');
-    $('compareDetailLabel').textContent=`${startLabel}~${endLabel} 합계`;
+    const period=comparePeriod(rangeState.dashboard);
+    const currentTotal=data.reduce((sum,row)=>sum+Number(row.cur||0),0);
+    const previousTotal=data.reduce((sum,row)=>sum+Number(row.prev||0),0);
+    $('compareRangeText').textContent=`${period.start} ~ ${period.end}`;
+    $('compareDetailLabel').textContent=`${period.start} ~ ${period.end} 합계`;
     $('compareCurrentValue').textContent=won(currentTotal);
     $('comparePrevValue').textContent=won(previousTotal);
+    $('dashboardCompareDifference').textContent=formatChange(currentTotal,previousTotal);
+    $('dashboardCompareDifference').className=currentTotal>previousTotal?'up':currentTotal<previousTotal?'down':'flat';
+    $('compareCurrentLegend').textContent=`선택 기간 매출 (${period.start} ~ ${period.end})`;
+    $('comparePreviousLegend').textContent=`전년 동기 매출 (${period.previousStart} ~ ${period.previousEnd})`;
     return;
   }
   const labelId = {dashboard:'dashboardDetailLabel',sales:'salesDetailLabel',expenses:'expensesDetailLabel',all:'allDetailLabel'}[chartKey];
@@ -3906,9 +3957,40 @@ function updateChartDetail(chartKey){
   }
 
   if(labelId) $(labelId).textContent=item.label;
-  if(chartKey==='sales'){ $('salesValueDetail').textContent=won(item.s); }
-  if(chartKey==='expenses'){ $('expensesValueDetail').textContent=won(item.e); }
-  if(chartKey==='all'){ $('allSalesValue').textContent=won(item.s); $('allExpenseValue').textContent=won(item.e); }
+  if(chartKey==='sales'){
+    const month=item.key.slice(0,7);
+    const monthRows=sales.filter(row=>row.sale_date.startsWith(month)&&row.sale_date<=currentDate);
+    const recordedDays=new Set(monthRows.map(row=>row.sale_date)).size;
+    const monthTotal=monthRows.reduce((total,row)=>total+Number(row.amount||0),0);
+    $('salesDetailLabel').textContent=`${Number(month.slice(5,7))}월 하루 평균`;
+    $('salesValueDetail').textContent=won(recordedDays?monthTotal/recordedDays:0);
+    $('salesDetail').title=`${month} 매출 합계 ÷ 매출 등록일 ${recordedDays}일 (미입력 날짜 제외)`;
+  }
+  if(chartKey==='expenses'){
+    const month=item.key.slice(0,7);
+    const monthRows=expenses.filter(row=>row.expense_date.startsWith(month)&&row.expense_date<=currentDate);
+    const currentMonth=currentDate.slice(0,7);
+    const calendarDays=month>currentMonth?0:month===currentMonth
+      ?Number(currentDate.slice(8,10))
+      :new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();
+    const monthTotal=monthRows.reduce((total,row)=>total+Number(row.amount||0),0);
+    $('expensesDetailLabel').textContent=`${Number(month.slice(5,7))}월 하루 평균`;
+    $('expensesValueDetail').textContent=won(calendarDays?monthTotal/calendarDays:0);
+    $('expensesDetail').title=`${month} 지출 합계 ÷ ${calendarDays}일 (지출 없는 날 포함, 이번 달은 오늘까지)`;
+  }
+  if(chartKey==='all'){
+    const bounds=getBounds(rangeState.all,'all');
+    const end=dateISO(bounds.end);
+    const dates=[...sales.map(row=>row.sale_date),...expenses.map(row=>row.expense_date)].filter(date=>date&&date<=end).sort();
+    const start=bounds.start?dateISO(bounds.start):(dates[0]||end);
+    const days=compareDayCount(start,end);
+    const totalSales=sales.filter(row=>row.sale_date>=start&&row.sale_date<=end).reduce((total,row)=>total+Number(row.amount||0),0);
+    const totalExpenses=expenses.filter(row=>row.expense_date>=start&&row.expense_date<=end).reduce((total,row)=>total+Number(row.amount||0),0);
+    $('allDetailLabel').textContent=`${start.replaceAll('-','.')} ~ ${end.replaceAll('-','.')} 하루 평균`;
+    $('allSalesValue').textContent=won(totalSales/days);
+    $('allExpenseValue').textContent=won(totalExpenses/days);
+    $('allDetail').title=`선택 기간 합계 ÷ ${days}일 (매출·지출 없는 날 포함)`;
+  }
 }
 function normalizeRecurringCategory(name,memo=''){
   const n=`${String(name||'').trim()} ${String(memo||'').trim()}`;
@@ -4197,6 +4279,58 @@ function renderMonthlyYoy(){
   const totalClass=totalDiff>0?'diff-up':totalDiff<0?'diff-down':'diff-flat';
   rows.push(`<tr><td><strong>합계</strong></td><td><strong>${won(prevTotal)}</strong></td><td class="sale"><strong>${won(currentTotal)}</strong></td><td class="${totalClass}"><strong>${totalDiff>0?'+':''}${won(totalDiff)}</strong></td></tr>`);
   $('monthlyYoyTableBody').innerHTML=rows.join('');
+  $('salesMonthlyPrevYearHead').textContent=`${previousYear}년`;
+  $('salesMonthlyCurrentYearHead').textContent=`${currentYear}년`;
+  $('salesMonthlyYoyNote').textContent=`${currentMonth}월은 ${cutoffDay}일까지 동일 기간 비교`;
+  $('salesMonthlyYoyTableBody').innerHTML=rows.join('');
+}
+
+function renderExpenseMonthlyYoy(){
+  const currentYear=Number(currentDate.slice(0,4));
+  const previousYear=currentYear-1;
+  const currentMonth=Number(currentDate.slice(5,7));
+  const cutoffDay=Number(currentDate.slice(8,10));
+  const prevByMonth=Array(12).fill(0);
+  const currentByMonth=Array(12).fill(0);
+
+  expenses.forEach(x=>{
+    const d=String(x.expense_date||'');
+    if(d.length<10) return;
+    const year=Number(d.slice(0,4));
+    const month=Number(d.slice(5,7));
+    const day=Number(d.slice(8,10));
+    if(month<1||month>12) return;
+    const amount=Number(x.amount||0);
+    if(year===currentYear){
+      // 현재 연도는 오늘 이후의 미래 날짜 지출을 월별 비교에 포함하지 않습니다.
+      if(month<currentMonth || (month===currentMonth && day<=cutoffDay)) currentByMonth[month-1]+=amount;
+    }else if(year===previousYear){
+      // 현재 월은 전년도도 같은 일자까지만 합산해 공정하게 비교합니다.
+      if(month<currentMonth || (month===currentMonth && day<=cutoffDay)) prevByMonth[month-1]+=amount;
+      else if(month>currentMonth) prevByMonth[month-1]+=amount;
+    }
+  });
+
+  $('expenseMonthlyPrevYearHead').textContent=`${previousYear}년`;
+  $('expenseMonthlyCurrentYearHead').textContent=`${currentYear}년`;
+  $('expenseMonthlyYoyNote').textContent=`${currentMonth}월은 ${cutoffDay}일까지 동일 기간 비교`;
+
+  let prevTotal=0,currentTotal=0;
+  const rows=[];
+  for(let month=1;month<=12;month++){
+    const prev=prevByMonth[month-1]||0;
+    const isFuture=month>currentMonth;
+    const cur=isFuture?null:(currentByMonth[month-1]||0);
+    if(!isFuture){ prevTotal+=prev; currentTotal+=cur; }
+    const diff=isFuture?null:cur-prev;
+    const diffClass=diff===null?'diff-flat':diff>0?'diff-up':diff<0?'diff-down':'diff-flat';
+    const diffText=diff===null?'—':`${diff>0?'+':''}${won(diff)}`;
+    rows.push(`<tr><td><strong>${month}월</strong></td><td>${won(prev)}</td><td class="expense">${cur===null?'—':`<strong>${won(cur)}</strong>`}</td><td class="${diffClass}">${diffText}</td></tr>`);
+  }
+  const totalDiff=currentTotal-prevTotal;
+  const totalClass=totalDiff>0?'diff-up':totalDiff<0?'diff-down':'diff-flat';
+  rows.push(`<tr><td><strong>합계</strong></td><td><strong>${won(prevTotal)}</strong></td><td class="expense"><strong>${won(currentTotal)}</strong></td><td class="${totalClass}"><strong>${totalDiff>0?'+':''}${won(totalDiff)}</strong></td></tr>`);
+  $('expenseMonthlyYoyTableBody').innerHTML=rows.join('');
 }
 
 function initYoySummaryDates(){
@@ -4275,7 +4409,111 @@ const editIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function head(){return '<div class="list-head"><div>날짜</div><div>금액</div><div>메모</div><div>관리</div></div>'}
 function saleRow(x){return `<div class="list-row"><div class="cell-date">${md(x.sale_date)}</div><div class="cell-amount sale">${won(x.amount)}</div><div class="cell-memo">${esc(x.memo||'-')}</div><div class="actions"><button class="action edit" onclick="editSale(${x.id})" aria-label="수정">${editIcon}</button><button class="action delete" onclick="deleteSale(${x.id})" aria-label="삭제">${deleteIcon}</button></div></div>`}
 function expenseRow(x){return `<div class="list-row"><div class="cell-date">${md(x.expense_date)}</div><div class="cell-amount expense">-${won(x.amount)}</div><div class="cell-memo"><span class="category">${esc(x.category)}${x.memo?' · '+esc(x.memo):''}</span></div><div class="actions"><button class="action edit" onclick="editExpense(${x.id})" aria-label="수정">${editIcon}</button><button class="action delete" onclick="deleteExpense(${x.id})" aria-label="삭제">${deleteIcon}</button></div></div>`}
+function formatChange(current,previous){
+  const diff=current-previous;
+  const rate=previous===0?(current===0?'0%':'전년 0원 · 비율 계산 불가'):((diff>0?'+':'')+(diff/previous*100).toFixed(1)+'%');
+  return (diff>0?'+':'')+won(diff)+' ('+rate+')';
+}
+function missingSaleDates(){
+  const recorded=new Set(sales.map(row=>row.sale_date));
+  const dates=[];
+  for(let day=1;day<Number(currentDate.slice(8,10));day++){
+    const date=currentDate.slice(0,7)+'-'+String(day).padStart(2,'0');
+    if(!recorded.has(date))dates.push(date);
+  }
+  return dates;
+}
+function openMissingSales(){openPanel('sales');requestAnimationFrame(()=>$('missingSalesCard').scrollIntoView({behavior:'smooth',block:'start'}));}
+function openMissingSale(date){
+  openPanel('sales');closeEntrySheet('sales');openEntrySheet('sales');$('saleDate').value=date;
+  $('salesEntryHost').scrollIntoView({behavior:'smooth',block:'center'});$('saleAmount').focus({preventScroll:true});
+}
+function monthlyGoalKey(){return 'mimine_monthly_goal_'+currentDate.slice(0,7)}
+function saveMonthlyGoal(){
+  const input=$('monthlyGoalInput').value.trim();
+  const raw=input.replaceAll(',','');
+  if(input&&(!/^\d+$/.test(raw)||!Number.isSafeInteger(Number(raw))||Number(raw)<=0)){
+    $('monthlyGoalStatus').textContent='목표는 1원 이상의 정수로 입력해 주세요.';return;
+  }
+  try{if(input)localStorage.setItem(monthlyGoalKey(),raw);else localStorage.removeItem(monthlyGoalKey());}
+  catch(error){$('monthlyGoalStatus').textContent='저장하지 못했습니다. 브라우저 저장 설정을 확인해 주세요.';return;}
+  renderMonthlyGoal();$('monthlyGoalStatus').textContent=input?'목표를 저장했습니다.':'목표를 해제했습니다.';
+}
+function renderMonthlyGoal(){
+  let goal=0;try{goal=Number(localStorage.getItem(monthlyGoalKey())||0)}catch(error){}
+  if(!Number.isFinite(goal)||goal<0)goal=0;
+  const month=currentDate.slice(0,7),day=Number(currentDate.slice(8,10));
+  const total=sales.filter(row=>row.sale_date.startsWith(month)&&row.sale_date<=currentDate).reduce((n,row)=>n+Number(row.amount||0),0);
+  const remaining=Math.max(0,goal-total),lastDay=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),daysLeft=lastDay-day;
+  $('monthlyGoalMonth').textContent=month;
+  if(document.activeElement!==$('monthlyGoalInput'))$('monthlyGoalInput').value=goal?goal.toLocaleString('ko-KR'):'';
+  $('monthlyGoalProgress').value=goal?Math.min(100,total/goal*100):0;
+  $('monthlyGoalSummary').textContent=goal?'달성률 '+(total/goal*100).toFixed(1)+'% · '+won(total)+' / '+won(goal):'이번 달 목표를 설정해 주세요.';
+  $('monthlyGoalRemaining').textContent=!goal?'':remaining===0?'이번 달 목표를 달성했습니다.':daysLeft>0?'남은 목표 '+won(remaining)+' · 내일부터 '+daysLeft+'일간 하루 '+won(Math.ceil(remaining/daysLeft))+' 필요':'오늘이 마지막 날입니다. 남은 목표 '+won(remaining);
+}
+function renderBusinessInsights(){
+  const month=currentDate.slice(0,7),day=Number(currentDate.slice(8,10));
+  const total=(rows,field)=>rows.filter(row=>row[field].startsWith(month)&&row[field]<=currentDate).reduce((n,row)=>n+Number(row.amount||0),0);
+  const revenue=total(sales,'sale_date'),cost=total(expenses,'expense_date');
+  $('dailyBalancePeriod').textContent=month+'-01 ~ '+currentDate+' · '+day+'일';
+  $('dailyBalanceSales').textContent=won(revenue/day);$('dailyBalanceExpenses').textContent=won(cost/day);$('dailyBalanceNet').textContent=won((revenue-cost)/day);
+  $('dailyBalanceNet').className=revenue>=cost?'up':'down';
+  const missing=missingSaleDates();
+  $('dashboardMissingSalesCard').classList.toggle('hidden',missing.length===0);
+  $('missingSalesSummary').textContent=missing.length?'매출 미입력 '+missing.length+'일 · 날짜 확인 ›':'어제까지 매출 입력 완료';
+  $('missingSalesDates').innerHTML=missing.length?missing.map(date=>'<button type="button" class="btn ghost" data-date="'+date+'" onclick="openMissingSale(this.dataset.date)">'+date.slice(5).replace('-','/')+'</button>').join(''):'<span class="hint">미입력 날짜가 없습니다.</span>';
+  renderMonthlyGoal();renderExpenseCategories();
+}
+function renderExpenseCategories(){
+  const month=currentDate.slice(0,7),day=Number(currentDate.slice(8,10));
+  const prev=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-2,1),prevMonth=dateISO(prev).slice(0,7);
+  const cutoff=Math.min(day,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate());
+  const previousEnd=prevMonth+'-'+String(cutoff).padStart(2,'0');
+  const map=new Map();
+  expenses.forEach(row=>{
+    const date=row.expense_date;
+    const field=date>=month+'-01'&&date<=currentDate?'current':date>=prevMonth+'-01'&&date<=previousEnd?'previous':null;
+    if(!field)return;
+    const name=String(row.category||'기타').trim()||'기타';
+    if(!map.has(name))map.set(name,{current:0,previous:0});map.get(name)[field]+=Number(row.amount||0);
+  });
+  $('categoryComparePeriod').textContent=prevMonth+'-01 ~ '+previousEnd+' / '+month+'-01 ~ '+currentDate;
+  $('categoryCompareBody').innerHTML=[...map.entries()].sort((a,b)=>b[1].current-a[1].current).map(([name,v])=>{
+    const diff=v.current-v.previous;
+    return '<tr><td>'+esc(name)+'</td><td>'+won(v.previous)+'</td><td>'+won(v.current)+'</td><td class="'+(diff>0?'down':diff<0?'up':'flat')+'">'+(diff>0?'+':'')+won(diff)+'</td></tr>';
+  }).join('')||'<tr><td colspan="4">비교할 지출 내역이 없습니다.</td></tr>';
+}
+
+function renderSalesPeriodComparison(){
+  const period=customRange.sales||comparePeriod(rangeState.sales);
+  const start=period.start,end=period.end;
+  const previousStart=comparePreviousDate(start),previousEnd=comparePreviousDate(end);
+  const total=(from,to)=>sales.filter(row=>row.sale_date>=from&&row.sale_date<=to).reduce((sum,row)=>sum+Number(row.amount||0),0);
+  const current=total(start,end),previous=total(previousStart,previousEnd),difference=current-previous;
+  $('salesCompareCurrentLabel').textContent=`선택 기간 · ${start} ~ ${end}`;
+  $('salesComparePreviousLabel').textContent=`전년 동기 · ${previousStart} ~ ${previousEnd}`;
+  $('salesCompareCurrent').textContent=won(current);
+  $('salesComparePrevious').textContent=won(previous);
+  $('salesCompareDifference').textContent=formatChange(current,previous);
+  $('salesCompareDifference').className=difference>0?'up':difference<0?'down':'flat';
+  $('salesCompareNote').textContent='선택한 기간의 합계를 작년 같은 날짜의 합계와 비교합니다. 미입력 매출은 합계에 포함되지 않습니다.';
+}
+function renderDailyLedger(rows){
+  if(!rows.length)return '<div class="empty">등록된 내역이 없습니다.</div>';
+  const days=new Map();
+  rows.forEach(row=>{
+    if(!days.has(row.date))days.set(row.date,{sales:0,expenses:0,hasSales:false,hasExpenses:false,rows:[]});
+    const day=days.get(row.date);
+    if(row.type==='sale'){day.sales+=Number(row.amount||0);day.hasSales=true;}
+    else{day.expenses+=Number(row.amount||0);day.hasExpenses=true;}
+    day.rows.push(row);
+  });
+  return '<p class="hint">날짜별 합계입니다. 날짜 행을 누르면 메모와 수정·삭제 버튼이 표시됩니다.</p><div class="ledger-head"><span>날짜</span><span>매출</span><span>비용</span><span></span></div>'+[...days.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([date,day])=>
+    '<details class="ledger-day"><summary class="ledger-summary"><span class="ledger-date">'+esc(date)+'</span><strong class="sale">'+(day.hasSales?won(day.sales):'—')+'</strong><strong class="expense">'+(day.hasExpenses?won(day.expenses):'—')+'</strong><span class="ledger-chevron" aria-hidden="true">⌄</span></summary><div class="ledger-details">'+day.rows.map(row=>'<div class="ledger-entry"><div class="ledger-entry-top"><strong class="'+(row.type==='sale'?'sale':'expense')+'">'+(row.type==='sale'?'매출 ':'비용 ')+won(row.amount)+'</strong><div class="actions"><button class="action edit" onclick="'+(row.type==='sale'?'editSale':'editExpense')+'('+Number(row.id)+')" aria-label="'+esc(date)+' '+(row.type==='sale'?'매출':'비용')+' 수정">'+editIcon+'</button><button class="action delete" onclick="'+(row.type==='sale'?'deleteSale':'deleteExpense')+'('+Number(row.id)+')" aria-label="'+esc(date)+' '+(row.type==='sale'?'매출':'비용')+' 삭제">'+deleteIcon+'</button></div></div><div class="ledger-memo">'+esc((row.type==='sale'?'':(row.category||'기타')+' · ')+(row.memo||'메모 없음'))+'</div></div>').join('')+'</div></details>'
+  ).join('');
+}
 function renderLists(){
+  renderSalesPeriodComparison();
   const filteredSales=activeRows('sales');
   const filteredExpenses=activeRows('expenses');
   $('salesList').innerHTML=filteredSales.length?head()+filteredSales.map(saleRow).join(''):'<div class="empty">선택 기간의 매출이 없습니다.</div>';
@@ -4290,7 +4528,7 @@ function renderLists(){
   $('salesPeriodLabel').textContent=`${salesStart.slice(5).replace('-','.')} ~ ${salesEnd.slice(5).replace('-','.')}`;
   $('expensesPeriodLabel').textContent=`${expensesStart.slice(5).replace('-','.')} ~ ${expensesEnd.slice(5).replace('-','.')}`;
   const all=[...sales.map(x=>({...x,type:'sale',date:x.sale_date})),...expenses.map(x=>({...x,type:'expense',date:x.expense_date}))].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
-  $('allList').innerHTML=all.length?head()+all.map(x=>x.type==='sale'?saleRow(x):expenseRow(x)).join(''):'<div class="empty">등록된 내역이 없습니다.</div>'
+  $('allList').innerHTML=renderDailyLedger(all);
 }
 async function saveSale(){
   const button=$('saleSaveButton');
@@ -4357,6 +4595,7 @@ async function saveSale(){
     syncDateInputs(true);
     await loadAll();
     closeEntrySheet('sales');
+    openPanel('dashboard');
 
     setTimeout(()=>{
       status.classList.remove('show');
@@ -5553,8 +5792,8 @@ function resetHorizontalPosition(){
   }catch(error){}
 }
 
-const PANEL_ORDER=['dashboard','sales','expenses','products','all'];
-function currentPanelId(){return document.querySelector('.panel.active')?.id||PANEL_ORDER[0]}
+const PANEL_ORDER=['sales','expenses','dashboard','products','all'];
+function currentPanelId(){return document.querySelector('.panel.active')?.id||'dashboard'}
 function openPanel(id,direction=0){
   const target=document.getElementById(id);
   if(!target)return;
@@ -5650,7 +5889,7 @@ let navSwipeTracking=false;
 
 function isInteractiveElement(target){
   return !!target.closest(
-    'input,select,textarea,button,a,label,[contenteditable="true"]'
+    'input,select,textarea,button,a,label,.chart-wrap,.compare-table-wrap,[contenteditable="true"]'
   );
 }
 

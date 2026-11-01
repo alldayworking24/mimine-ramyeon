@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>미미네 · 올베이스 연결</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#eff4f8;color:#15304b;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;display:grid;place-items:center;padding:24px}.card{width:100%;max-width:380px;background:white;border:1px solid #e1e9f2;border-radius:23px;padding:30px;box-shadow:0 15px 60px #163a5c09}img{height:53px;width:100px;object-fit:contain;object-position:left}small{font-size:10px;letter-spacing:1.5px;color:#8499ae;display:block;margin-top:22px}h1{font-size:24px;letter-spacing:-.8px;margin:5px 0 8px}p{color:#8091a6;font-size:12px;margin:0 0 22px}label{font-size:12px;color:#59728c;display:block;margin-top:15px;font-weight:600}input{width:100%;padding:12px 13px;margin-top:6px;border:1px solid #dce5ef;border-radius:10px;font:inherit;color:#15304b;background:#fcfdff}input:focus{outline:2px solid #8eb6fa}button{width:100%;background:#225fe9;color:white;border:0;border-radius:11px;padding:13px;margin-top:22px;font:inherit;font-weight:600;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.message{font-size:12px;padding:12px;border-radius:10px;background:#f1f6fc;color:#6f86a3;line-height:1.8;margin-top:20px}.message.error{background:#fff1f2;color:#ba5665}.safe{font-size:10px;color:#9aabba;text-align:center;margin-top:23px}[hidden]{display:none!important}a{color:#376fce}.back{margin-top:14px;font-size:11px;text-align:center}
+  </style>
+</head>
+<body>
+<main class="card">
+  <img src="/mimine-face-logo.png" alt="미미네 로고" width="100" height="53">
+  <small>ALLBASE CONNECTION</small>
+  <h1>미미네 계정 연결</h1>
+  <p>기존 계정으로 안전하게 하루를 연결하세요.</p>
+  <form id="login" hidden>
+    <label for="email">이메일<input type="email" id="email" autocomplete="username" required></label>
+    <label for="password">비밀번호<input type="password" id="password" autocomplete="current-password" required></label>
+    <button id="submit" type="submit">계정 확인하고 연결</button>
+  </form>
+  <div id="status" class="message" role="status" aria-live="polite"></div>
+  <div class="safe">로그인은 미미네에서 처리합니다.<br>비밀번호는 올베이스로 전달하지 않습니다.</div>
+  <div class="back"><a href="/" target="_blank" rel="noopener">기존 앱 열기</a></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script>
+(() => {
+  'use strict';
+  const C = {"name": "미미네", "project": "hunoualsfmfckalwbilt", "key": "sb_publishable_DFp-SNqkUWJiX4CHLu_gxQ_FrtXHDwg", "logo": "/mimine-face-logo.png", "targets": ["sales", "expenses", "dashboard", "products", "all"], "id": "mimine"};
+  const api = 'https://' + C.project + '.supabase.co/auth/v1/';
+  const key = C.key;
+  const allowedOrigins = new Set(['https://allbase.netlify.app', 'https://allbase.alldayworking.chatgpt.site']);
+  const targets = new Set(C.targets);
+  const params = new URLSearchParams(location.search);
+  const origin = params.get('origin'), nonce = params.get('nonce');
+  const intent = params.get('intent') === 'open' ? 'open' : 'connect';
+  const target = targets.has(params.get('target')) ? params.get('target') : 'dashboard';
+  const form = document.getElementById('login'), button = document.getElementById('submit');
+  const status = document.getElementById('status');
+  let proven = false, working = false, done = false, ping;
+
+  function message(text, error = false) {
+    status.textContent = text;
+    status.classList.toggle('error', error);
+  }
+  function send(type, payload = {}) {
+    if (allowedOrigins.has(origin) && window.opener) {
+      window.opener.postMessage({type, app:C.id, nonce, ...payload}, origin);
+    }
+  }
+  async function auth(path, body, accessToken) {
+    const response = await fetch(api + path, {
+      method: body ? 'POST' : 'GET',
+      headers: {apikey:key, ...(body ? {'Content-Type':'application/json'} : {}), ...(accessToken ? {Authorization:'Bearer ' + accessToken} : {})},
+      body: body ? JSON.stringify(body) : undefined,
+      cache:'no-store', signal:AbortSignal.timeout(20000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(response.status === 400 || response.status === 401
+        ? '이메일과 비밀번호를 확인해 주세요.'
+        : response.status === 429 ? '요청이 많습니다. 잠시 후 다시 시도해 주세요.' : '로그인 서버에 연결하지 못했습니다.');
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+  let client;
+  function sb() {
+    if (!client) client = supabase.createClient('https://' + C.project + '.supabase.co', key, {auth:{autoRefreshToken:false, detectSessionInUrl:false}});
+    return client;
+  }
+  async function existingSession() {
+    if (C.id === 'mimine') {
+      const {data, error} = await sb().auth.getSession();
+      if (error) throw error;
+      return data.session;
+    }
+    const access_token = localStorage.getItem('alldayworking_private_token');
+    const refresh_token = localStorage.getItem('alldayworking_private_refresh');
+    return access_token && refresh_token ? {access_token, refresh_token} : null;
+  }
+  function expiry(session) {
+    if (Number(session.expires_at) > 0) return Number(session.expires_at);
+    try {
+      const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return Number(JSON.parse(atob(payload)).exp) || 0;
+    } catch { return 0; }
+  }
+  async function accept(session) {
+    if (!session?.access_token || !session?.refresh_token) throw new Error('계정 연결 정보를 확인해 주세요.');
+    let fresh = session, user;
+    try { user = await auth('user', null, fresh.access_token); }
+    catch (error) {
+      if (error.status !== 401) throw error;
+      fresh = await auth('token?grant_type=refresh_token', {refresh_token:fresh.refresh_token});
+      user = await auth('user', null, fresh.access_token);
+    }
+    if (!user?.id) throw new Error('로그인 상태를 다시 확인해 주세요.');
+    // JWT expiry is scheduling metadata only; the Auth server above verifies identity.
+    const expires_at = expiry(fresh);
+    if (C.id === 'mimine') {
+      const saved = await sb().auth.setSession({...fresh, expires_at});
+      if (saved.error) throw saved.error;
+    } else {
+      localStorage.setItem('alldayworking_private_token', fresh.access_token);
+      localStorage.setItem('alldayworking_private_refresh', fresh.refresh_token);
+    }
+    return {...fresh, expires_at, user:{id:user.id, email:user.email}};
+  }
+  async function finish(session) {
+    const fresh = await accept(session);
+    done = true;
+    form.hidden = true;
+    if (intent === 'open') {
+      send('allbase:updated', {session:fresh});
+      history.replaceState(null, '', '/allbase-connect.html');
+      location.replace('/#allbase=' + encodeURIComponent(target));
+    } else {
+      send('allbase:connected', {session:fresh});
+      message('계정을 연결했습니다. 올베이스로 돌아갑니다.');
+      setTimeout(() => window.close(), 700);
+    }
+  }
+  async function connectExisting(preferred) {
+    if (working || done) return;
+    working = true;
+    try {
+      const session = preferred || await existingSession();
+      if (session) {
+        try { await finish(session); }
+        catch (error) {
+          // The original app may have rotated its session since the hub last opened.
+          const native = preferred ? await existingSession() : null;
+          if (!native || native.access_token === session.access_token) throw error;
+          await finish(native);
+        }
+      }
+      else { form.hidden = false; message(C.name + '의 기존 계정으로 로그인해 주세요.'); }
+    } catch {
+      form.hidden = false;
+      message('로그인 상태를 확인하려면 기존 계정으로 로그인해 주세요.');
+    } finally { working = false; }
+  }
+  window.addEventListener('message', async event => {
+    if (!allowedOrigins.has(origin) || !/^[\w-]{48,128}$/.test(nonce || '') || !window.opener || event.origin !== origin || event.source !== window.opener || event.data?.nonce !== nonce || event.data?.app !== C.id) return;
+    if (!['allbase:request', 'allbase:session'].includes(event.data.type) || working || done) return;
+    proven = true;
+    clearInterval(ping);
+    await connectExisting(event.data.type === 'allbase:session' && intent === 'open' ? event.data.session : null);
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!proven || working || done) return;
+    working = true;
+    button.disabled = true;
+    message('계정을 확인하고 있습니다.');
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    try {
+      const session = await auth('token?grant_type=password', {email, password});
+      document.getElementById('password').value = '';
+      await finish(session);
+    } catch (error) { message(error.message, true); }
+    finally { document.getElementById('password').value = ''; working = false; button.disabled = false; }
+  });
+  if (!allowedOrigins.has(origin) || !/^[\w-]{48,128}$/.test(nonce || '') || !window.opener) {
+    message('올베이스의 내 앱 메뉴에서 계정 연결을 시작해 주세요.', true);
+    return;
+  }
+  message('올베이스와 안전하게 연결하고 있습니다.');
+  send('allbase:ready');
+  ping = setInterval(() => { if (!proven) send('allbase:ready'); }, 500);
+  setTimeout(() => {
+    clearInterval(ping);
+    if (!proven) message('연결 요청을 확인하지 못했습니다. 올베이스에서 다시 시작해 주세요.', true);
+  }, 15000);
+})();
+</script>
+</body>
+</html>
