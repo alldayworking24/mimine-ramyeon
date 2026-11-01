@@ -2773,6 +2773,7 @@ body.entry-sheet-open{overflow:auto;touch-action:auto}
 table thead th { text-align:center !important; vertical-align:middle !important; }
 .brand-icon img,.logo img{object-fit:contain!important;background:transparent!important;}
 </style>
+<link rel="stylesheet" href="finance-suite.css?v=20261101-1">
 </head>
 <body>
 <div class="login" id="loginView"><div class="login-box">
@@ -2804,7 +2805,7 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 </div>
 </div></div>
 <div class="hidden" id="appView"><div class="app">
-<header class="header"><div class="header-inner"><div class="brand"><div class="brand-icon"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-face-logo.png?v=20260805-0014"/><span class="brand-fallback" style="display:none">미미네</span></div><div><h1>미미네 라면가게</h1><small>매출·지출 관리 · Google Sheet 기준</small></div></div><button aria-label="로그아웃" class="icon-btn" id="logoutButton" onclick="logout()" title="로그아웃"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path></svg></button></div></header>
+<header class="header"><div class="header-inner"><div class="brand"><div class="brand-icon"><img alt="미미네 라면가게 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" src="mimine-face-logo.png?v=20260805-0014"/><span class="brand-fallback" style="display:none">미미네</span></div><div><h1>미미네 라면가게</h1><small>매출·지출 관리</small></div></div><button aria-label="로그아웃" class="icon-btn" id="logoutButton" onclick="logout()" title="로그아웃"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path></svg></button></div></header>
 <main class="main">
 <div class="swipe-guide">화면을 좌우로 밀어 메뉴를 이동할 수 있습니다.</div>
 <section class="panel active" id="dashboard">
@@ -2824,7 +2825,7 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 <div class="metrics"><button aria-label="오늘 매출 등록하기" class="metric metric-action" onclick="openTodaySalesForm()" type="button"><div class="label">오늘 매출 <span class="metric-hint">등록하기 ›</span></div><div class="value sale" id="todaySales">0원</div></button><button aria-label="오늘 지출 등록하기" class="metric metric-action" onclick="openTodayExpenseForm()" type="button"><div class="label">오늘 지출 <span class="metric-hint">등록하기 ›</span></div><div class="value expense" id="todayExpenses">0원</div></button></div>
 <div class="section"><div class="section-head"><h2>작년 같은 날 비교</h2><span id="yoyDateText">-</span></div><div class="yoy-card"><div class="yoy-grid"><div class="yoy-item"><span>오늘 매출</span><strong class="sale" id="yoyTodaySales">0원</strong></div><div class="yoy-item"><span>작년 같은 날</span><strong id="yoyLastSales">0원</strong></div></div><div class="yoy-change"><span>작년 대비 증감</span><strong class="flat" id="yoyChange">0원 (0%)</strong></div></div></div>
 <div class="hero">
-<div class="hero-top"><div><div class="hero-title">이번 달 순수익</div><div class="hero-value" id="monthProfit">0원</div></div><div class="hero-badge" id="monthStatus">이번 달 현황</div></div>
+<div class="hero-top"><div><div class="hero-title">이번 달 매출 − 지출</div><div class="hero-value" id="monthProfit">0원</div></div><div class="hero-badge" id="monthStatus">이번 달 현황</div></div>
 <div class="hero-row"><div class="hero-mini"><span>이번 달 매출</span><strong id="monthSales">0원</strong></div><div class="hero-mini"><span>이번 달 지출</span><strong id="monthExpenses">0원</strong></div></div>
 </div>
 <div class="section insight-summary"><div class="section-head"><h2>이번 달 하루 평균</h2><span id="dailyBalancePeriod"></span></div><div class="insight-grid"><div class="card"><span>매출</span><strong class="sale" id="dailyBalanceSales"></strong></div><div class="card"><span>지출</span><strong class="expense" id="dailyBalanceExpenses"></strong></div><div class="card"><span>남는 금액</span><strong id="dailyBalanceNet"></strong></div></div><p class="hint">오늘까지의 매출 − 지출 기준 단순 수지입니다. 거래 없는 날도 포함합니다.</p></div>
@@ -3211,7 +3212,7 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 </div>
 
 <script>
-const APP_BUILD='2026-07-26-all-charts-coordinate-consistency';
+const APP_BUILD='2026-11-01-finance-bank-v1';
 const SUPABASE_URL='https://hunoualsfmfckalwbilt.supabase.co';
 const SUPABASE_KEY='sb_publishable_DFp-SNqkUWJiX4CHLu_gxQ_FrtXHDwg';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -3701,6 +3702,16 @@ async function loadPurchaseBatches(force=false){
   return purchaseBatchesLoading;
 }
 
+async function loadFinanceRows(table, dateField){
+  let rows=[];
+  for(let offset=0;offset<100000;offset+=1000){
+    const result=await db.from(table).select('*').order(dateField,{ascending:false}).order('id',{ascending:false}).range(offset,offset+999);
+    if(result.error)return result;
+    rows.push(...(result.data||[]));
+    if((result.data||[]).length<1000)return {data:rows,error:null};
+  }
+  return {data:null,error:{message:'조회 한도를 초과했습니다. 관리자에게 문의해 주세요.'}};
+}
 async function loadAll(showBanner=false){
   if(showBanner){
     setDataLoadBanner('','데이터 불러오는 중','매출과 지출을 먼저 불러오고 있습니다.');
@@ -3709,10 +3720,10 @@ async function loadAll(showBanner=false){
   try{
     const [salesResult,expensesResult]=await withTimeout(
       Promise.all([
-        db.from('sales').select('*').order('sale_date',{ascending:false}).order('id',{ascending:false}),
-        db.from('expenses').select('*').order('expense_date',{ascending:false}).order('id',{ascending:false})
+        loadFinanceRows('sales','sale_date'),
+        loadFinanceRows('expenses','expense_date')
       ]),
-      4000,
+      20000,
       '매출·지출 조회 시간이 초과되었습니다.'
     );
 
@@ -3744,7 +3755,7 @@ async function loadAll(showBanner=false){
 }
 
 function render(){const t=currentDate,m=t.slice(0,7),ly=oneYearAgo(t);const todaySales=sum(sales.filter(x=>x.sale_date===t)),todayExpenses=sum(expenses.filter(x=>x.expense_date===t)),lastYearSales=sum(sales.filter(x=>x.sale_date===ly)),monthSales=sum(sales.filter(x=>x.sale_date.startsWith(m))),monthExpenses=sum(expenses.filter(x=>x.expense_date.startsWith(m))),profit=monthSales-monthExpenses,diff=todaySales-lastYearSales,pct=lastYearSales===0?(todaySales===0?0:null):(diff/lastYearSales*100);
-$('todaySales').textContent=won(todaySales);$('todayExpenses').textContent=won(todayExpenses);$('monthSales').textContent=won(monthSales);$('monthExpenses').textContent=won(monthExpenses);$('monthProfit').textContent=(profit<0?'-':'')+won(Math.abs(profit));$('monthProfit').className='hero-value '+(profit<0?'profit-negative':'profit-positive');$('monthStatus').textContent=profit<0?'지출이 더 많습니다':'순이익이 플러스입니다';$('yoyTodaySales').textContent=won(todaySales);$('yoyLastSales').textContent=won(lastYearSales);$('yoyDateText').textContent=md(ly);const y=$('yoyChange');y.textContent=(diff>0?'+':'')+won(diff)+(pct===null?' (신규)':` (${pct>0?'+':''}${pct.toFixed(1)}%)`);y.className=diff>0?'up':diff<0?'down':'flat';renderBusinessInsights();renderDueReminders();renderRangeControls();renderAllCharts();renderMonthlyYoy();renderExpenseMonthlyYoy();renderYoySummary();renderLists()}
+$('todaySales').textContent=won(todaySales);$('todayExpenses').textContent=won(todayExpenses);$('monthSales').textContent=won(monthSales);$('monthExpenses').textContent=won(monthExpenses);$('monthProfit').textContent=(profit<0?'-':'')+won(Math.abs(profit));$('monthProfit').className='hero-value '+(profit<0?'profit-negative':'profit-positive');$('monthStatus').textContent=profit<0?'지출이 더 많습니다':'등록 매출이 지출보다 많습니다';$('yoyTodaySales').textContent=won(todaySales);$('yoyLastSales').textContent=won(lastYearSales);$('yoyDateText').textContent=md(ly);const y=$('yoyChange');y.textContent=(diff>0?'+':'')+won(diff)+(pct===null?' (신규)':` (${pct>0?'+':''}${pct.toFixed(1)}%)`);y.className=diff>0?'up':diff<0?'down':'flat';renderBusinessInsights();renderDueReminders();renderRangeControls();renderAllCharts();renderMonthlyYoy();renderExpenseMonthlyYoy();renderYoySummary();renderLists()}
 function renderRangeControls(){
   ['dashboard','sales','expenses','all'].forEach(type=>{
     const ids=type==='dashboard'?['dashboardRangeSelect','dashRangeSelect']:[type+'RangeSelect'];
@@ -4581,12 +4592,7 @@ async function saveSale(){
     $('saleMemo').value='';
     $('saleAmountError').classList.remove('show');
 
-    const monthStart=`${saleDate.slice(0,7)}-01`;
-    customRange.sales={
-      start:monthStart,
-      end:saleDate>currentDate?saleDate:currentDate
-    };
-    rangeState.sales='1m';
+
 
     status.textContent=`${saleDate.slice(5).replace('-','.')} 매출 ${won(amount)}이 저장되었습니다.`;
     status.style.color='var(--profit)';
@@ -4669,12 +4675,7 @@ async function saveExpense(){
     $('expenseCategory').value='식자재';
     updateExpenseCardCompanyVisibility();
     $('expenseAmountError').classList.remove('show');
-    const monthStart=`${expenseDate.slice(0,7)}-01`;
-    customRange.expenses={
-      start:monthStart,
-      end:expenseDate>currentDate?expenseDate:currentDate
-    };
-    rangeState.expenses='1m';
+
     status.textContent='지출이 등록되었습니다.';
     status.style.color='var(--profit)';
     status.classList.add('show');
@@ -6031,4 +6032,4 @@ db.auth.onAuthStateChange(async(event,session)=>{
 
 window.addEventListener('DOMContentLoaded',updateExpenseCardCompanyVisibility);
 </script>
-</body></html>
+<script src="finance-core.js?v=20261101-1"></script><script src="forecast.js?v=20261101-1"></script><script src="finance-suite.js?v=20261101-1"></script></body></html>

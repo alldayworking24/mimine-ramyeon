@@ -1,0 +1,6 @@
+.netlify/
+dist/
+node_modules/
+.env*
+.openai/
+qa-preview/

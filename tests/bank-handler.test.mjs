@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {createHandler} from '../supabase/functions/mimine-bank/handler.mjs';
+const env=n=>n==='SUPABASE_URL'?'https://bank.example':n==='SUPABASE_SERVICE_ROLE_KEY'?'test-service':undefined;
+const counters={write:0};let hasAccess=true,active=true;
+const fetcher=async(url,options={})=>{
+ let data=[];
+ if(url.endsWith('/auth/v1/user'))data={id:'owner-id',email:'owner@example.com'};
+ else if(url.includes('/app_users?'))data=[{is_active:active}];
+ else if(url.includes('mimine_bank_access?'))data=hasAccess?[{adw_user_id:'owner-adw-id'}]:[];
+ else if(url.includes('/sales?'))data=[{amount:100000}];
+ else if(url.includes('/adw_sms_events?'))data=[{id:'11111111-1111-4111-8111-111111111111',amount:60000,payer:'test',occurred_at:'2026-10-29T00:00:00Z',payment_id:null}];
+ if(options.method==='POST'||options.method==='PATCH')counters.write++;
+ return Response.json(data);
+};
+const handler=createHandler({env,fetcher});
+const req=b=>new Request('https://example/',{method:'POST',headers:{Authorization:'Bearer test-jwt','Content-Type':'application/json'},body:JSON.stringify(b)});
+assert.equal((await handler(new Request('https://example/'))).status,405);
+assert.equal((await handler(new Request('https://example/',{method:'POST'}))).status,401);
+hasAccess=false;assert.equal((await handler(req({action:'list',start:'2026-10-01',end:'2026-10-31'}))).status,403);hasAccess=true;
+active=false;assert.equal((await handler(req({action:'list'}))).status,403);active=true;
+assert.equal((await handler(req({action:'list',start:'2026-02-30',end:'2026-10-31'}))).status,400);
+const list=await handler(req({action:'list',start:'2026-10-01',end:'2026-10-31'}));assert.equal(list.status,200);assert.equal((await list.json()).events.length,1);
+assert.equal((await handler(req({action:'settlement',saleDate:'2026-10-27',card:90000,cash:10000,other:0,fee:1800}))).status,200);
+assert.equal((await handler(req({action:'settlement',saleDate:'2026-10-27',card:80000,cash:10000,other:0,fee:1800}))).status,409);
+assert.equal((await handler(req({action:'settlement',saleDate:'2026-10-27',card:90000,cash:10000,other:0,fee:100000}))).status,400);
+assert.equal((await handler(req({action:'allocate',eventId:'bad',saleDate:'2026-10-27',amount:1}))).status,400);
+assert.equal((await handler(req({action:'classify',eventId:'11111111-1111-4111-8111-111111111111',business:'mimine',category:'settlement'}))).status,200);
+console.log('Bank handler: authorization, inactive user, validation, real-data response, settlement total consistency passed.');
