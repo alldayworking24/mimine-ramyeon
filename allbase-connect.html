@@ -37,6 +37,7 @@
   const params = new URLSearchParams(location.search);
   const origin = params.get('origin'), nonce = params.get('nonce');
   const intent = params.get('intent') === 'open' ? 'open' : 'connect';
+  const unified = params.get('unified') === '1';
   const target = targets.has(params.get('target')) ? params.get('target') : 'dashboard';
   const form = document.getElementById('login'), button = document.getElementById('submit');
   const status = document.getElementById('status');
@@ -90,7 +91,7 @@
       return Number(JSON.parse(atob(payload)).exp) || 0;
     } catch { return 0; }
   }
-  async function accept(session) {
+  async function accept(session, expected) {
     if (!session?.access_token || !session?.refresh_token) throw new Error('계정 연결 정보를 확인해 주세요.');
     let fresh = session, user;
     try { user = await auth('user', null, fresh.access_token); }
@@ -100,6 +101,7 @@
       user = await auth('user', null, fresh.access_token);
     }
     if (!user?.id) throw new Error('로그인 상태를 다시 확인해 주세요.');
+    if (expected && (user.id !== expected.id || user.email?.trim().toLowerCase() !== expected.email?.trim().toLowerCase())) throw new Error('올베이스 계정으로 다시 연결해 주세요.');
     // JWT expiry is scheduling metadata only; the Auth server above verifies identity.
     const expires_at = expiry(fresh);
     if (C.id === 'mimine') {
@@ -111,8 +113,8 @@
     }
     return {...fresh, expires_at, user:{id:user.id, email:user.email}};
   }
-  async function finish(session) {
-    const fresh = await accept(session);
+  async function finish(session, expected) {
+    const fresh = await accept(session, expected);
     done = true;
     form.hidden = true;
     if (intent === 'open') {
@@ -125,22 +127,30 @@
       setTimeout(() => window.close(), 700);
     }
   }
+  function requireWorkspace() {
+    done = true;
+    form.hidden = true;
+    message('올베이스 통합 연결에서 계정을 확인하고 있습니다.');
+    send('allbase:workspace-required');
+  }
   async function connectExisting(preferred) {
     if (working || done) return;
     working = true;
     try {
       const session = preferred || await existingSession();
       if (session) {
-        try { await finish(session); }
+        try { await finish(session, unified ? preferred?.user : null); }
         catch (error) {
           // The original app may have rotated its session since the hub last opened.
           const native = preferred ? await existingSession() : null;
           if (!native || native.access_token === session.access_token) throw error;
-          await finish(native);
+          await finish(native, unified ? preferred?.user : null);
         }
       }
+      else if (unified) requireWorkspace();
       else { form.hidden = false; message(C.name + '의 기존 계정으로 로그인해 주세요.'); }
     } catch {
+      if (unified) { requireWorkspace(); return; }
       form.hidden = false;
       message('로그인 상태를 확인하려면 기존 계정으로 로그인해 주세요.');
     } finally { working = false; }
@@ -155,6 +165,7 @@
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!proven || working || done) return;
+    if (unified) { requireWorkspace(); return; }
     working = true;
     button.disabled = true;
     message('계정을 확인하고 있습니다.');
