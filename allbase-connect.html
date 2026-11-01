@@ -29,6 +29,32 @@
 <script>
 (() => {
   'use strict';
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function validLaunchDate(value){
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+  const time=Date.parse(value+'T12:00:00Z');
+  return Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===value;
+}
+function normalizeLaunchDetails(app,values={}){
+  if(!['adw','study'].includes(app))return {};
+  const details={},record=values?.record,date=values?.date;
+  if(typeof record==='string'&&record.length>0&&record.length<=512&&!/[\u0000-\u001f\u007f]/.test(record)&&!['undefined','null'].includes(record)&&(app!=='adw'||uuid.test(record)))details.record=record;
+  if(validLaunchDate(date))details.date=date;
+  return details;
+}
+function launchHash(app,target,values={}){
+  const details=normalizeLaunchDetails(app,values),params=new URLSearchParams();
+  if(app==='study'){
+    if(details.date)params.set('date',details.date);
+    if(details.record)params.set('event',details.record);
+    if(details.date||details.record)params.set('mode','today');
+    return '/#'+encodeURIComponent(target)+(params.size?'?'+params:'');
+  }
+  params.set('allbase',target);
+  for(const [key,value]of Object.entries(details))params.set(key,value);
+  return '/#'+params;
+}
+
   const C = {"name": "미미네", "project": "hunoualsfmfckalwbilt", "key": "sb_publishable_DFp-SNqkUWJiX4CHLu_gxQ_FrtXHDwg", "logo": "/mimine-face-logo.png", "targets": ["sales", "expenses", "dashboard", "products", "all"], "id": "mimine"};
   const api = 'https://' + C.project + '.supabase.co/auth/v1/';
   const key = C.key;
@@ -39,6 +65,7 @@
   const intent = params.get('intent') === 'open' ? 'open' : 'connect';
   const unified = params.get('unified') === '1';
   const target = targets.has(params.get('target')) ? params.get('target') : 'dashboard';
+  const details = normalizeLaunchDetails(C.id, {record:params.get('record'), date:params.get('date')});
   const form = document.getElementById('login'), button = document.getElementById('submit');
   const status = document.getElementById('status');
   let proven = false, working = false, done = false, ping;
@@ -120,7 +147,7 @@
     if (intent === 'open') {
       send('allbase:updated', {session:fresh});
       history.replaceState(null, '', '/allbase-connect.html');
-      location.replace('/#allbase=' + encodeURIComponent(target));
+      location.replace(launchHash(C.id, target, details));
     } else {
       send('allbase:connected', {session:fresh});
       message('계정을 연결했습니다. 올베이스로 돌아갑니다.');
