@@ -10,7 +10,8 @@ const app=await read('flow/app.js');vm.runInContext(app.slice(0,app.indexOf("doc
 const analytics=await read('flow/analytics.js');vm.runInContext(analytics.slice(0,analytics.indexOf('renderToday=()=>')),c);
 const interactions=await read('flow/interactions.js');vm.runInContext(interactions.slice(0,interactions.indexOf('const bankBeforeExclusion=')),c);
 vm.runInContext("flow.start='2026-11-01';flow.end='2026-11-03';for(const[d,a,p]of[['2026-11-03',1600,48300],['2026-11-02',47500,42700],['2026-11-01',55600,55600]]){db.sales.find(s=>s.date===d).amount=a;db.sales.find(s=>s.date===shiftedYear(d)).amount=p;}",c);
-const table=vm.runInContext('dailyTable()',c);
+const moneyText=html=>html.replace(/<svg[^>]*class="revenue-edit-cue"[\s\S]*?<\/svg>/g,'').replace(/<button[^>]*data-action="today-sale"[^>]*>([\s\S]*?)<\/button>/g,'$1');
+const table=moneyText(vm.runInContext('dailyTable()',c));
 assert.match(table,/<th class="metric-previous">작년 매출<\/th><th class="metric-sales">일매출<\/th>/);
 assert.match(table,/<td class="metric-previous previous-money">48,300<\/td><td class="metric-sales">1,600<\/td><td class="metric-balance change-down"><strong>-46,700/);
 assert.match(table,/change-up"><strong>\+4,800/);
@@ -23,7 +24,7 @@ assert.match(chart,/data-tone="increase"[^>]*stroke="#2463d6"/);
 assert.match(chart,/data-tone="decrease"[^>]*stroke="#dc4a4e"/);
 assert.equal(vm.runInContext('changeTone(null)',c),'change-flat');
 vm.runInContext("db.sales=db.sales.filter(s=>s.date!=='2025-11-03')",c);
-assert.match(vm.runInContext('dailyTable()',c),/previous-money">미입력<\/td><td class="metric-sales">1,600<\/td><td class="metric-balance change-flat">/);
+assert.match(moneyText(vm.runInContext('dailyTable()',c)),/previous-money">미입력<\/td><td class="metric-sales">1,600<\/td><td class="metric-balance change-flat">/);
 for(const[last,tone]of [[1,'change-up'],[99999999,'change-down']]){
  vm.runInContext('forecastValues=()=>({enough:true,priorComplete:true,total:200,current:100,rest:100,last:'+last+',future:[1],monthMissing:0})',c);
  assert.match(vm.runInContext('forecastPanel()',c),new RegExp('metric-balance '+tone));

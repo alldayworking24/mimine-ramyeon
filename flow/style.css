@@ -91,3 +91,59 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
 /* Full period windows distinguish future dates from zero sales. */
 .flow-window-note{font-size:10px;line-height:1.65;color:#68778a;background:#f3f5f8;border-radius:8px;padding:7px 9px;margin:8px 0;overflow-wrap:anywhere}
 .chart-axis-date.is-today{color:var(--sales);font-weight:800;background:#edf7f2}
+
+/* Revenue totals open today's entry without changing the displayed period. */
+.revenue-shortcut{font:inherit;color:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;padding:3px 0;text-align:inherit;border-radius:4px;max-width:100%;font-variant-numeric:tabular-nums}
+.revenue-shortcut:hover{text-decoration:underline;text-underline-offset:4px}
+.sales-summary-shortcut{text-align:left}.sales-summary-shortcut small{display:flex;align-items:center;justify-content:space-between}.sales-summary-shortcut small svg{width:15px;height:15px;color:var(--sales)}
+.sales-summary-shortcut em{font-style:normal}.sales-summary-shortcut:hover{border-color:var(--sales);background:#f7fcf9}
+.sale-entry-sheet{background:#fff}.sale-entry-sheet .sheet-body{padding:12px 20px 18px;flex:1 1 auto;overflow-y:auto}
+.sale-entry-sheet .entry-type{margin:0 0 10px;padding:3px}.sale-entry-sheet .entry-type button{padding:6px;min-height:30px;font-size:12px}
+.sale-entry-date .form-field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}.sale-entry-date label{font-size:12px;margin:0;white-space:nowrap;color:#6a7889}.sale-entry-date input{width:172px;height:38px;min-height:38px;padding:5px 9px;font-size:16px}
+.sale-entry-primary{position:sticky;top:-12px;z-index:3;padding:10px 0 12px;background:#fff;border-bottom:1px solid #edf0f3}
+.sale-entry-primary>label{font-size:12px;font-weight:750;color:var(--sales);display:block;margin-bottom:7px}
+.sale-entry-amount-row{display:grid;grid-template-columns:minmax(0,1fr) 84px;gap:10px;align-items:stretch}
+.sale-entry-amount-row .amount-field{min-width:0;margin:0;padding:0 12px;height:58px;border-color:#bddbce;background:#f4fbf7}.sale-entry-sheet .sale-entry-amount-row input{font-size:30px;line-height:1.2;min-width:0;padding:9px 0;height:56px;color:var(--sales);border:0;background:transparent}
+.sale-entry-amount-row .amount-field>span{font-size:13px;right:10px}.sale-inline-save{padding:10px 8px;min-height:58px;background:var(--sales);font-size:15px;gap:4px}.sale-inline-save:hover{background:#1b6d50}
+.sale-entry-sheet #existing-sale-note{padding:8px 10px;margin:10px 0 0;font-size:11px;line-height:1.5}.sale-entry-sheet #existing-sale-note svg{width:15px;height:15px}
+.sale-entry-sheet .sale-money-steps{margin:10px 0 12px;gap:6px}.sale-money-steps button{min-height:34px;padding:5px 9px}
+.sale-entry-extra{border-top:1px solid #e8edf1;margin-top:4px;padding-top:8px}.sale-entry-extra>summary{display:flex;align-items:center;gap:7px;cursor:pointer;min-height:38px;font-size:12px;font-weight:650;list-style:none}.sale-entry-extra>summary::-webkit-details-marker{display:none}.sale-entry-extra>summary span{color:#8994a1;font-size:10px;font-weight:500}.sale-entry-extra>summary svg{width:16px;height:16px;margin-left:auto}.sale-entry-extra[open]>summary svg{transform:rotate(180deg)}
+.sale-entry-sheet .sheet-footer:empty{display:none}.sale-entry-sheet .inline-error{margin-top:8px}.sale-entry-sheet .inline-error:not(.show){display:none}
+@media(max-width:760px){
+ .modal-overlay{top:var(--dialog-visible-top,0px);bottom:auto;height:var(--dialog-visible-height,100dvh)}
+ .sheet{max-height:calc(var(--dialog-visible-height,100dvh) - 8px)}
+ .sale-entry-sheet .sheet-head{padding:10px 18px}.sale-entry-sheet .sheet-head .eyebrow{display:none}.sale-entry-sheet .sheet-head h2{font-size:20px}
+ .sale-entry-sheet .sheet-body{padding-left:16px;padding-right:16px;padding-bottom:12px}
+ .sale-entry-sheet .sheet-footer{padding:8px 16px}.sale-entry-sheet .sheet-footer button{min-height:36px}
+ .sale-entry-primary{top:-12px}.sale-entry-amount-row{grid-template-columns:minmax(0,1fr) 78px;gap:8px}
+}
+
+/* Consistent action icons with short visible names and full accessible labels. */
+.ui-icon-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;line-height:1.3;vertical-align:middle}
+.ui-icon-action>svg{width:21px;height:21px;stroke-width:1.9;flex-shrink:0}
+.ui-action-label{font-size:inherit;font-weight:inherit;line-height:1.3}
+.ui-icon-tile{flex-direction:column;gap:3px;min-width:58px;min-height:54px;padding:6px 10px;border-radius:12px}
+.ui-icon-tile>svg{width:24px;height:24px}.ui-icon-tile>.ui-action-label{font-size:10px;white-space:nowrap}
+.supply-quick-actions>.ui-icon-action{flex-direction:column;gap:6px;min-height:78px;padding:10px 5px}
+.supply-quick-actions>.ui-icon-action>svg{width:27px;height:27px;color:#315777}
+.supply-quick-actions>.ui-icon-action>.ui-action-label{font-size:12px;font-weight:750}
+.setting-buttons>.ui-icon-action{justify-content:flex-start;text-align:left;padding-left:14px}
+.ui-icon-filter{gap:4px}.ui-icon-filter>svg{width:16px;height:16px}
+.bank-entry-actions{flex-wrap:wrap}.bank-entry-actions .ui-icon-action{min-height:36px;padding:6px 8px}
+.sale-inline-save.ui-icon-action{min-height:58px;gap:4px}.sale-inline-save.ui-icon-action>svg{width:22px;height:22px}
+.sale-entry-sheet .entry-type .ui-icon-action{min-height:30px;gap:6px}.sale-entry-sheet .entry-type .ui-icon-action>svg{width:16px;height:16px}
+.sale-money-steps .ui-icon-action{min-height:34px}.sale-money-steps .ui-icon-action>svg{width:14px;height:14px}
+@media(max-width:760px){
+ .flow-presets>.ui-icon-filter{flex:1;min-width:0;flex-direction:column;gap:3px;min-height:49px;padding:5px 2px}
+ .flow-presets>.ui-icon-filter>svg{width:19px;height:19px}.flow-presets>.ui-icon-filter>.ui-action-label{font-size:10px;white-space:nowrap}
+ .ui-icon-action.compact{min-height:40px}.ui-icon-tile.compact{min-height:52px}
+ .supply-quick-actions>.ui-icon-action{min-height:72px}.supply-quick-actions>.ui-icon-action>svg{width:25px;height:25px}
+ .settings-row .ui-icon-action{min-height:40px}.ui-icon-action>svg{width:20px;height:20px}
+}
+
+.revenue-shortcut .revenue-edit-cue{width:12px;height:12px;margin-left:4px;vertical-align:middle;opacity:.7;stroke-width:1.8}
+
+.ui-icon-action[hidden],.ui-icon-action.hidden{display:none!important}
+@media(max-width:760px){.desktop-add.ui-icon-action{display:none}}
+
+.period-numbers .revenue-shortcut .revenue-edit-cue{display:none}

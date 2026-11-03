@@ -63,3 +63,23 @@ function installMimineNavViewport({win,doc}){
  schedule();
 }
 installMimineNavViewport({win:window,doc:document});
+
+/* Android keeps the layout viewport tall when the software keyboard opens. */
+function installMimineDialogViewport({win,doc}){
+ const viewport=win.visualViewport;if(!viewport)return;
+ let pending=false;
+ function update(){
+  pending=false;
+  if(Math.abs(viewport.scale-1)>.02)return;
+  doc.documentElement.style.setProperty('--dialog-visible-height',`${Math.round(viewport.height)}px`);
+  doc.documentElement.style.setProperty('--dialog-visible-top',`${Math.round(viewport.offsetTop)}px`);
+ }
+ function schedule(){if(!pending){pending=true;win.requestAnimationFrame(update);}}
+ viewport.addEventListener('resize',schedule,{passive:true});
+ viewport.addEventListener('scroll',schedule,{passive:true});
+ win.addEventListener('resize',schedule,{passive:true});
+ doc.addEventListener('focusin',schedule);
+ doc.addEventListener('focusout',schedule);
+ schedule();
+}
+installMimineDialogViewport({win:window,doc:document});
