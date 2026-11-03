@@ -19,7 +19,7 @@ c.openEntry=(...args)=>{opened=args;};run("action({dataset:{action:'today-sale'}
 c.openEntry=c.originalQuickEntry;
 let amountFocused=false,amountSelected=false,body,footer;
 const dateInput={addEventListener(){}};
-const nodes={'.sheet':{classList:{add(){}}},'.sale-entry-primary':{after(){}},'#form-error':{},'#entry-amount':{setAttribute(){},focus(){amountFocused=true;},select(){amountSelected=true;}},'#entry-form':{querySelector:()=>dateInput}};
+const nodes={'.sheet':{classList:{add(){}}},'.sale-entry-primary':{after(){}},'#form-error':{},'#entry-amount':{setAttribute(){},addEventListener(){},focus(){amountFocused=true;},select(){amountSelected=true;}},'#entry-form':{querySelector:()=>dateInput}};
 c.document.querySelector=s=>nodes[s]??null;c.sheet=(title,b,f)=>{body=b;footer=f;};
 run("openEntry('sale','','2026-11-03')");
 assert.match(body,/value="2026-11-03"/);assert.match(body,/value="161,130"/);assert.equal((body.match(/type="submit"/g)||[]).length,1);assert.doesNotMatch(footer,/type="submit"/);assert.match(body,/sale-entry-amount-row[\s\S]*sale-inline-save/);assert.ok(amountFocused&&amountSelected);
@@ -33,3 +33,23 @@ viewport.height=780;viewport.offsetTop=0;listeners.get('resize')();flush();asser
 viewport.scale=2;viewport.height=250;listeners.get('resize')();flush();assert.equal(props.get('--dialog-visible-height'),'780px','Do not force dialog resizing while pinch zooming');
 d.installMimineDialogViewport({win:{},doc:{}});
 console.log('Quick sales: revenue shortcuts, today independent of filters, dated detail/product guards, one adjacent submit, existing amount, focus and keyboard viewport changes passed.');
+
+// Tap-to-replace keeps the old value until typing and does not reselect digits
+// typed before a queued browser-selection correction runs.
+{
+ const handlers=new Map(),frames=[];
+ const input={value:'161,130',selectionStart:7,selectionEnd:7,isConnected:true,ownerDocument:{},addEventListener:(n,fn)=>handlers.set(n,fn),select(){this.selectionStart=0;this.selectionEnd=this.value.length;}};
+ input.ownerDocument.activeElement=input;
+ c.installSaleAmountReplacement(input,fn=>frames.push(fn));
+ const flush=()=>{while(frames.length)frames.shift()();};
+ const type=key=>{const start=input.selectionStart;input.value=input.value.slice(0,start)+key+input.value.slice(input.selectionEnd);input.selectionStart=input.selectionEnd=start+key.length;handlers.get('input')();};
+ handlers.get('focus')();assert.equal(input.value,'161,130');assert.deepEqual([input.selectionStart,input.selectionEnd],[0,7]);flush();
+ // Re-tapping an already focused input must select the entire amount again.
+ input.selectionStart=input.selectionEnd=4;handlers.get('click')();
+ input.selectionStart=input.selectionEnd=3;flush();assert.deepEqual([input.selectionStart,input.selectionEnd],[0,7]);
+ handlers.get('click')();type('1');flush();type('9');type('8');type('0');type('0');type('0');assert.equal(input.value,'198000');
+ handlers.get('click')();type('7');flush();type('5');type('0');type('0');type('0');assert.equal(input.value,'75000');
+ handlers.get('click')();input.ownerDocument.activeElement=null;input.selectionStart=input.selectionEnd=2;flush();assert.deepEqual([input.selectionStart,input.selectionEnd],[2,2]);
+ input.ownerDocument.activeElement=input;handlers.get('click')();input.isConnected=false;input.selectionStart=input.selectionEnd=1;flush();assert.deepEqual([input.selectionStart,input.selectionEnd],[1,1]);
+ console.log('Sales replacement: focus/re-tap selects all, original value retained, immediate multi-digit replacement and blur/close guards passed.');
+}
