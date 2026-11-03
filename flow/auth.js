@@ -10,7 +10,7 @@ async function createMimineAuthenticatedBridge(){
  if(isMimineLocalDocument()){
   form.hidden=true;document.getElementById('auth-account').hidden=true;
   document.getElementById('auth-online').hidden=false;
-  message.textContent='압축파일에서 연 화면입니다. 실제 매장 데이터는 운영 사이트에서 로그인한 뒤 확인할 수 있습니다. 가상 화면은 별도 mockup.html 파일에서 확인하세요.';
+  message.textContent='파일로 직접 연 화면입니다. 수정본의 실데이터는 PC에서 동봉한 실행 파일로 서버를 실행한 뒤 로그인해야 표시됩니다. 운영 사이트 링크는 현재 배포본이며, 실행 방법은 START-HERE.txt를 확인하세요.';
   return new Promise(()=>{});
  }
  const recovery=new URLSearchParams(location.search).has('code')||location.hash.includes('type=recovery');

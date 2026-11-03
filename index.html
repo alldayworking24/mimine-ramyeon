@@ -217,6 +217,25 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
 .annual-year-control>label{min-width:0}.annual-year-control select{width:160px;max-width:100%}
 @media(max-width:760px){.annual-metric-card>strong{font-size:16px}}
 @media(max-width:380px){.annual-metric-card>strong{font-size:14px}}
+/* Monthly obligations: status color, stable 3-second rolling, and card choices. */
+.yoy-equation{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.yoy-equation>div+div{border-left:1px solid #edf0f4;padding-left:12px}
+.payment-banner{margin:0 0 14px;padding:6px;background:#fff;border:1px solid #e0e7ee;border-radius:15px;box-shadow:0 3px 12px #263f5810;min-width:0}
+.payment-roll-row{display:flex;align-items:stretch;gap:5px;min-height:72px}.payment-roll-item{border:0;border-radius:11px;display:flex;align-items:center;gap:10px;padding:12px;min-width:0;flex:1;text-align:left;color:#334458;background:#fff8e8;animation:payment-roll-in .25s ease}
+.payment-roll-item.is-paid{background:#edf9f3}.payment-roll-item.is-overdue{background:#fff0ef}.payment-roll-item.is-partial{background:#fff7e6}
+.payment-status-icon{display:flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;border-radius:11px;background:#ffedc3;color:#b47c16}.payment-status-icon svg{width:20px;height:20px}.is-paid .payment-status-icon{color:#228461;background:#d9f0e4}.is-overdue .payment-status-icon{background:#ffded9;color:#cb4e42}
+.payment-roll-copy{display:block;min-width:0;flex:1}.payment-roll-head{display:flex;align-items:center;gap:8px;min-width:0}.payment-roll-head>strong{font-size:14px;font-weight:750;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.payment-roll-head>b{font-size:16px;white-space:nowrap;letter-spacing:-.6px}.payment-status{background:#ffebbb;color:#9b6a13;border-radius:6px;padding:4px 5px;font-size:10px;white-space:nowrap;font-weight:750}.is-paid .payment-status{color:#247c59;background:#d9f0e4}.is-overdue .payment-status{background:#ffded9;color:#b3443b}.payment-roll-date{display:block;color:#8a929b;font-size:11px;line-height:1.5;margin-top:7px;white-space:normal}
+.payment-roll-controls{width:40px;flex:0 0 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0}.payment-roll-controls>.icon-button{height:34px;width:36px;min-height:34px;color:#768598}.payment-roll-controls>.icon-button>svg{width:17px;height:17px}.payment-roll-controls>div{display:flex;align-items:center;justify-content:center;gap:1px;font-size:9px;color:#9aa5b1}.payment-pause{display:flex;align-items:center;justify-content:center;border:0;background:none;color:#8896a8;min-width:24px;min-height:28px;padding:4px}.payment-pause svg{width:12px;height:12px}
+.payment-empty{border:0;display:flex;align-items:center;gap:10px;background:#f5f8fc;width:100%;min-height:64px;padding:12px;text-align:left;color:#57718e;border-radius:11px;font-size:13px}.payment-empty>svg{width:22px;height:22px;flex-shrink:0}.payment-empty>span{flex:1}.payment-empty small{display:block;color:#98a4b3;font-size:11px;margin-top:5px}
+.expense-card-select-wrap select{width:100%;min-height:48px;padding:10px 12px;background:#fff;border:1px solid #dce2e9;border-radius:10px;font-size:16px;color:#28394b}.expense-card-select-wrap[hidden],.entry-sheet input[hidden]{display:none!important}.expense-card-select-wrap .field-note{margin:7px 0}
+.payment-settings-intro{font-size:12px;line-height:1.8;color:#8391a2;margin:0 0 14px}.payment-rule-editor{border:1px solid #e0e6ed;border-radius:13px;padding:12px;margin:0 0 12px;min-width:0}.payment-rule-editor-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:13px}.payment-rule-editor-head>.icon-button{width:30px;height:30px;min-height:30px;color:#9da7b3}.payment-rule-editor-head svg{width:17px;height:17px}
+.payment-rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.payment-rule-grid>label{font-size:11px;color:#7c8999;min-width:0}.payment-rule-grid input,.payment-rule-grid select,.payment-calendar-options textarea{display:block;min-width:0;width:100%;min-height:42px;border:1px solid #dfe5ec;background:#fff;border-radius:8px;color:#2d3e53;padding:8px;margin-top:5px;font-size:14px}.payment-rent-hint{display:flex;align-items:center;gap:7px;font-size:12px;color:#8a9aab}.payment-rent-hint>svg{width:19px;height:19px}.payment-rule-active{display:flex;gap:7px;align-items:center;font-size:11px;color:#7b8a9d;margin-top:12px}.payment-rule-active input{width:17px;height:17px;min-height:17px;padding:0;accent-color:#2b72bc}
+.payment-calendar-options{margin-top:18px;border-top:1px solid #e8edf3;padding-top:12px}.payment-calendar-options>summary{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;cursor:pointer}.payment-calendar-options summary>svg{width:17px;height:17px}.payment-calendar-options .form-field{margin-top:14px}.payment-calendar-options textarea{resize:vertical;font-size:13px}
+.payment-detail-status{display:flex;gap:8px;align-items:center;border-radius:12px;background:#fff7e7;color:#a06e13;padding:14px;margin-bottom:16px}.payment-detail-status.is-paid{background:#edf9f3;color:#228461}.payment-detail-status.is-overdue{background:#fff0ef;color:#c2473e}.payment-detail-status>svg{width:24px;height:24px}.payment-detail-status>span{font-size:12px}.payment-detail-status>strong{font-size:17px;margin-left:auto}
+.payment-detail-lines>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf0f4;font-size:12px}.payment-detail-lines>div>span{color:#8a97a6}.payment-detail-lines strong{font-size:13px;color:#415269}.payment-linked-records{display:grid;gap:8px;margin-top:12px}.payment-linked-records>button{font-size:12px;justify-content:space-between}
+@keyframes payment-roll-in{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.payment-roll-item{animation:none}}
+@media(max-width:760px){.payment-banner{margin-bottom:12px}.payment-roll-item{padding:10px 8px;gap:7px}.payment-roll-head{gap:5px}.payment-roll-head>strong{font-size:12px}.payment-roll-head>b{font-size:14px}.payment-status{font-size:9px;padding:4px}.payment-status-icon{width:28px;height:28px;flex-basis:28px}.payment-roll-date{font-size:10px}.yoy-equation{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.yoy-equation>div+div{padding-left:10px}}
+.payment-roll-controls{width:54px;flex-basis:54px}.payment-next{display:flex;align-items:center;justify-content:center;gap:1px;min-height:28px;min-width:29px;padding:3px 0;border:0;background:none;color:#929eae;font-size:9px}.payment-next svg{width:10px;height:10px}
 </style>
 </head>
 <body class="auth-loading">
@@ -241,6 +260,94 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
 <div id="modal-root"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>;(async()=>{
+/* Calendar-backed reminders. Pure functions never write expenses or move money. */
+const PAYMENT_CARD_COMPANIES=['신한카드','삼성카드','현대카드','KB국민카드','롯데카드','우리카드','하나카드','NH농협카드','BC카드','IBK기업카드','씨티카드'];
+const PAYMENT_HOLIDAYS={
+ 2026:['01-01','02-16','02-17','02-18','03-01','03-02','05-01','05-05','05-24','05-25','06-03','06-06','07-17','08-15','08-17','09-24','09-25','09-26','10-03','10-05','10-09','12-25'],
+ 2027:['01-01','02-06','02-07','02-08','02-09','03-01','05-01','05-03','05-05','05-13','06-06','07-17','07-19','08-15','08-16','09-14','09-15','09-16','10-03','10-04','10-09','10-11','12-25','12-27']
+};
+const PAYMENT_CALENDAR_CHECKED='2026-11-03';
+function paymentIso(date){return date.toISOString().slice(0,10);}
+function paymentAddDays(date,n){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return paymentIso(d);}
+function paymentMonthShift(ym,n){const [y,m]=ym.split('-').map(Number);return paymentIso(new Date(Date.UTC(y,m-1+n,1))).slice(0,7);}
+function paymentMonthEnd(ym){const[y,m]=ym.split('-').map(Number);return paymentIso(new Date(Date.UTC(y,m,0)));}
+function paymentValidDate(date){return typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date+'T12:00:00Z'))&&paymentIso(new Date(date+'T12:00:00Z'))===date;}
+function paymentCardName(text){
+ const raw=String(text||'').trim(),s=raw.replace(/\s|[()㈜]|주식회사/g,'').toUpperCase();
+ const names=[['신한','신한카드'],['삼성','삼성카드'],['현대','현대카드'],['국민','KB국민카드'],['KB','KB국민카드'],['롯데','롯데카드'],['우리','우리카드'],['하나','하나카드'],['농협','NH농협카드'],['NH','NH농협카드'],['비씨','BC카드'],['BC','BC카드'],['기업','IBK기업카드'],['IBK','IBK기업카드'],['씨티','씨티카드']];
+ return names.find(([key])=>s.includes(key))?.[1]||raw;
+}
+function paymentNextBusinessDay(nominal,closedDays=[]){
+ let date=nominal,verified=true;const extra=new Set(closedDays);
+ for(let i=0;i<40;i++){
+  const y=Number(date.slice(0,4)),w=new Date(date+'T12:00:00Z').getUTCDay();
+  if(!PAYMENT_HOLIDAYS[y])verified=false;
+  if(w!==0&&w!==6&&!PAYMENT_HOLIDAYS[y]?.includes(date.slice(5))&&!extra.has(date))return{date,adjusted:date!==nominal,verified};
+  date=paymentAddDays(date,1);
+ }
+ throw new Error('납부일을 계산하지 못했습니다. 임시휴일 설정을 확인해 주세요.');
+}
+function paymentValidateConfig(config){
+ if(!config||!Array.isArray(config.rules)||config.rules.length>50)throw new Error('납부 항목은 최대 50개까지 등록할 수 있습니다.');
+ const ids=new Set(),matches=new Set();
+ const rules=config.rules.map(raw=>{
+  const r={id:String(raw.id||''),type:String(raw.type||''),name:String(raw.name||'').trim(),card:paymentCardName(raw.card||''),day:Number(raw.day),amount:Number(raw.amount||0),active:raw.active!==false};
+  if(!/^[a-zA-Z0-9_-]{1,80}$/.test(r.id)||ids.has(r.id))throw new Error('납부 항목 ID를 확인해 주세요.');ids.add(r.id);
+  if(!['rent','card','other'].includes(r.type)||!Number.isInteger(r.day)||r.day<1||r.day>31||!Number.isSafeInteger(r.amount)||r.amount<0||r.amount>999999999)throw new Error('납부일과 예상 금액을 확인해 주세요.');
+  if(r.type==='rent')r.name='임대료';
+  if(r.type==='card'){if(!r.card||r.card.length>60)throw new Error('카드사를 선택해 주세요.');r.name=r.card;}
+  if(!r.name||r.name.length>60)throw new Error('납부 항목 이름을 입력해 주세요.');
+  const key=r.type+':'+(r.type==='card'?r.card:r.type==='other'?r.name:'임대료');
+  if(matches.has(key))throw new Error('같은 납부 항목이나 카드사가 중복돼 있습니다.');matches.add(key);
+  return r;
+ });
+ const closedDays=[...new Set(config.closedDays||[])];
+ if(closedDays.length>200||closedDays.some(d=>!paymentValidDate(d)))throw new Error('임시휴일은 YYYY-MM-DD 형식으로 입력해 주세요.');
+ return{version:1,rules,closedDays:closedDays.sort()};
+}
+function paymentInferredRules(expenses){
+ const rent=expenses.filter(e=>e.category==='임대료'&&e.amount>0).sort((a,b)=>b.date.localeCompare(a.date))[0];
+ return rent?[{id:'rent-default',type:'rent',name:'임대료',card:'',day:1,amount:Number(rent.amount),active:true}]:[];
+}
+function paymentTag(ruleId,ym){return '[미미네납부:'+ruleId+':'+ym+']';}
+function paymentExtractTag(note){return String(note||'').match(/\[미미네납부:([a-zA-Z0-9_-]+):(\d{4}-\d{2})\]/)?.[0]||'';}
+function paymentCleanNote(note){return String(note||'').replace(/\[미미네납부:[a-zA-Z0-9_-]+:\d{4}-\d{2}\]/g,'').trim();}
+function paymentComposeNote(note,link){const clean=paymentCleanNote(note),tag=paymentExtractTag(link);return clean+(tag?(clean?'\n':'')+tag:'');}
+function paymentRuleMatches(rule,expense){
+ if(rule.type==='rent')return expense.category==='임대료';
+ if(rule.type==='card')return ['카드 대금','카드대금'].includes(expense.category)&&paymentCardName(expense.vendor)===rule.card;
+ return !['임대료','카드 대금','카드대금'].includes(expense.category)&&String(expense.vendor||'').trim()===rule.name;
+}
+function paymentInstances(config,expenses,today){
+ const normalized=paymentValidateConfig(config),ym=today.slice(0,7),months=[paymentMonthShift(ym,-1),ym,paymentMonthShift(ym,1)];
+ const all=normalized.rules.filter(r=>r.active).flatMap(rule=>months.map(month=>{
+  const nominal=month+'-'+String(Math.min(rule.day,Number(paymentMonthEnd(month).slice(8)))).padStart(2,'0'),business=paymentNextBusinessDay(nominal,normalized.closedDays);
+  return{key:rule.id+'|'+month,rule,month,nominal,due:business.date,adjusted:business.adjusted,calendarVerified:business.verified,records:[],paidAmount:0};
+ }));
+ for(const rule of normalized.rules.filter(r=>r.active)){
+  const instances=all.filter(i=>i.rule.id===rule.id);
+  for(const e of expenses.filter(e=>e.date<=today&&Number(e.amount)>0&&paymentRuleMatches(rule,e))){
+   const tag=String(e.paymentLink||e.note||'').match(/\[미미네납부:([a-zA-Z0-9_-]+):(\d{4}-\d{2})\]/);
+   let target;
+   if(tag){target=instances.find(i=>i.rule.id===tag[1]&&i.month===tag[2]);}
+   else{
+    // A month-end bill shifted into the next month belongs to the original
+    // cycle. Every untagged expense is assigned to exactly one cycle.
+    target=instances.find(i=>i.due.slice(0,7)>i.month&&e.date.slice(0,7)===i.due.slice(0,7)&&e.date<=i.due&&e.date>=i.month+'-01')
+      ||instances.find(i=>i.month===e.date.slice(0,7));
+   }
+   if(target){target.records.push(e);target.paidAmount+=Number(e.amount);}
+  }
+ }
+ return all.map(i=>({...i,status:i.paidAmount>0&&(!i.rule.amount||i.paidAmount>=i.rule.amount)?'paid':i.paidAmount>0?'partial':i.due<today?'overdue':'pending',remaining:Math.max(0,i.rule.amount-i.paidAmount)}));
+}
+function paymentVisibleInstances(config,expenses,today){
+ const ym=today.slice(0,7),all=paymentInstances(config,expenses,today);
+ const current=all.filter(i=>i.month===ym||(i.month<ym&&i.due>=ym+'-01'));
+ if(!current.some(i=>i.status!=='paid'))current.push(...all.filter(i=>i.month>ym).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,2));
+ return current;
+}
+
 /* Main-page server provider; uses the existing Mimine session and schema. */
 function createMimineProductionBridge(db,{bankRequest}={}){
  const launch=new URLSearchParams(location.hash.slice(1)).get('allbase')||'';
@@ -262,9 +369,10 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    rows('sales','sale_date'),rows('expenses','expense_date'),rows('products'),rows('product_categories'),rows('product_purchase_batches'),
    rows('mimine_stock_documents','created_at').then(data=>({data})).catch(error=>({data:[],error:error.message})),
    bankApi({action:'list',start,end:today}).then(data=>({data})).catch(error=>({data:{},error:error.message})),
-   rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message}))
+   rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message})),
+   db.from('mimine_settings').select('setting_value,updated_at').eq('setting_key','recurring_payment_rules_v1').maybeSingle().then(r=>{if(r.error)throw r.error;return{data:r.data};}).catch(error=>({data:null,error:error.message}))
   ]);
-  const[sr,er,pr,cr,br,docs,bankResult,images]=results,bank=bankResult.data;
+  const[sr,er,pr,cr,br,docs,bankResult,images,paymentSettings]=results,bank=bankResult.data;
   const productImages=new Map();
   for(const image of images.data.filter(i=>i.public_url).sort((a,b)=>Number(!!b.is_primary)-Number(!!a.is_primary)||Number(a.sort_order??Infinity)-Number(b.sort_order??Infinity)||Number(a.id)-Number(b.id))){const id=String(image.product_id);if(!productImages.has(id))productImages.set(id,image.public_url);}
   const settlements=new Map((bank.settlements||[]).map(s=>[s.sale_date,s]));
@@ -274,18 +382,25 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   let prefs={};try{prefs=JSON.parse(localStorage.getItem('mimine-flow-preferences')||'{}')}catch{}
   return {
    version:1,analyticsHistory:2,supplyHistory:1,goal:Number(prefs.goal||0),settings:{largeType:!!prefs.largeType,autoMatch:true},
+   paymentRulesConfigured:!!paymentSettings.data,paymentRules:paymentSettings.data?.setting_value?.rules||[],paymentClosedDays:paymentSettings.data?.setting_value?.closedDays||[],
    sales:sr.map(s=>{const t=settlements.get(s.sale_date);return{id:'s-'+s.sale_date,remoteId:String(s.id),date:s.sale_date,amount:Number(s.amount),card:Number(t?.card_amount||0),cash:Number(t?.cash_amount||0),other:Number(t?.other_amount||0),fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementConsistent:!t||Number(t.card_amount)+Number(t.cash_amount)+Number(t.other_amount)===Number(s.amount),note:s.memo||'',source:s.payment_method_name||'매출 장부'};}),
-   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:e.vendor?e.memo||'':''})),
+   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo)})),
    products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=br.filter(b=>String(b.product_id)===String(p.id)).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,imageUrl:productImages.get(String(p.id))||'',category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:docs.data.find(d=>d.supplier&&d.items.some(i=>String(i?.productId)===String(p.id)))?.supplier||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
    events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(d),time=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'}).format(d);return{id:e.id,date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||allocations.some(a=>a.event_id===e.id&&a.match_source==='auto')};}),
    links:allocations.map(a=>({id:a.event_id+'|'+a.sale_date,saleId:'s-'+a.sale_date,eventId:a.event_id,amount:Number(a.amount),method:a.match_source==='auto'?'자동':'수동'})),
    payerRules:(bank.aliases||[]).map(a=>({id:a.id,payer:a.payer,business:a.business,label:a.label,active:a.active})),
    receipts:docs.data.filter(d=>d.document_type==='receipt').reverse().map(d=>({id:d.id,date:d.purchase_date,supplier:d.supplier,total:Number(d.total),itemSubtotal:Number(d.item_subtotal),adjustment:Number(d.total)-Number(d.item_subtotal),items:d.items,imageData:d.image_data,rawText:d.raw_text,imageFingerprint:d.fingerprint,expenseId:d.expense_id})),
-   connection:{imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
+   connection:{paymentSettingsError:paymentSettings.error||'',imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
   };
  }
  async function invoke(command,payload){
-  await check();let result={};
+  const session=await check();let result={};
+  if(command==='payment-rules'){
+   const config=paymentValidateConfig(payload);
+   if(!session.user?.id)throw new Error('계정을 다시 확인해 주세요.');
+   const r=await db.from('mimine_settings').upsert({setting_key:'recurring_payment_rules_v1',setting_value:config,description:'매월 납부일과 임시휴일 설정',updated_by:session.user.id},{onConflict:'setting_key'});
+   if(r.error)throw new Error(r.error.message);return{ok:true};
+  }
   if(command==='bank')return bankApi(payload);
   if(command==='stock'){
    const r=await db.rpc('mimine_receive_stock',{p_request_id:payload.requestId,p_document:payload.document});if(r.error)throw new Error(r.error.message);return r.data;
@@ -337,7 +452,7 @@ async function createMimineAuthenticatedBridge(){
  if(isMimineLocalDocument()){
   form.hidden=true;document.getElementById('auth-account').hidden=true;
   document.getElementById('auth-online').hidden=false;
-  message.textContent='압축파일에서 연 화면입니다. 실제 매장 데이터는 운영 사이트에서 로그인한 뒤 확인할 수 있습니다. 가상 화면은 별도 mockup.html 파일에서 확인하세요.';
+  message.textContent='파일로 직접 연 화면입니다. 수정본의 실데이터는 PC에서 동봉한 실행 파일로 서버를 실행한 뒤 로그인해야 표시됩니다. 운영 사이트 링크는 현재 배포본이며, 실행 방법은 START-HERE.txt를 확인하세요.';
   return new Promise(()=>{});
  }
  const recovery=new URLSearchParams(location.search).has('code')||location.hash.includes('type=recovery');
@@ -388,7 +503,7 @@ let bootBridge;try{bootBridge=await createMimineAuthenticatedBridge();window.Mim
 'use strict';
 const TODAY=productionToday;
 const KEY='mimine-flow-preferences';
-const EXPENSE_CATEGORIES=['상품매입','소모품','임대료','공과금','카드 대금','기타'];
+const EXPENSE_CATEGORIES=['임대료','카드 대금','상품매입','소모품','공과금','기타'];
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const fmt=n=>Math.round(Number(n)||0).toLocaleString('ko-KR');
@@ -478,8 +593,8 @@ function installSaleAmountReplacement(input,requestFrame=fn=>window.requestAnima
 function field(label,html,note=''){const found=html.match(/\bid="([^"]+)"/),id=found?.[1]||uid('field');if(!found)html=html.replace(/<(input|select|textarea)\b/,`<$1 id="${id}"`);return`<div class="form-field"><label for="${id}">${label}</label>${html}${note?`<p class="field-note">${note}</p>`:''}</div>`;}
 function openEntry(type='sale',id='',date=view.date){const existing=id?(type==='sale'?db.sales:db.expenses).find(r=>r.id===id):null;const initial=existing||(type==='sale'?saleOn(date):null);const r=initial||{};const entryDate=r.date||date;modalContext={entryType:type,editing:!!existing,id:r.id||'',split:false};
  const saleBody=`<div class="sale-entry-date">${field('매출일',`<input name="date" type="date" value="${entryDate}" max="${TODAY}" ${existing?'readonly':''} required aria-label="매출일">`)}</div><div class="sale-entry-primary"><label for="entry-amount">하루 총매출</label><div class="sale-entry-amount-row">${inputAmount('entry-amount',r.amount||0)}<button class="primary entry-inline-save sale-inline-save" type="submit" aria-label="매출 저장" title="매출 저장">${icon('save')}</button></div></div><div class="soft-notice neutral ${initial?'':'hidden'}" id="existing-sale-note">${icon('info')}<span>기존 ${won(initial?.amount||0)} · 저장하면 해당 날짜의 일매출을 수정합니다.</span></div><div class="money-steps sale-money-steps"><button type="button" data-action="amount-add" data-target="entry-amount" data-value="10000">+1만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="50000">+5만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="100000">+10만</button><button type="button" data-action="amount-reset" data-target="entry-amount">지우기</button></div><details class="sale-entry-extra"><summary>결제수단·정산정보·메모 <span>선택</span>${icon('down')}</summary><button type="button" class="disclosure" data-action="toggle-split" aria-expanded="false">결제수단·정산정보 나누기${icon('down')}</button><div class="split-fields hidden" id="payment-split"><label>카드 매출<input name="card" data-money value="${fmt(r.card??r.amount??0)}" inputmode="numeric"></label><label>현금 매출<input name="cash" data-money value="${fmt(r.cash||0)}" inputmode="numeric"></label><label>기타 매출<input name="other" data-money value="${fmt(r.other||0)}" inputmode="numeric"></label><label>실제 수수료<input name="fee" data-money value="${fmt(r.fee||0)}" inputmode="numeric"></label><label>입금 예정일<input name="due" type="date" value="${r.due||''}"></label><p class="field-note">수수료는 정산표에 있는 실제 금액을 입력하세요.</p></div>${field('메모 · 선택',`<input name="note" maxlength="200" placeholder="예: 키오스크 마감 금액" value="${esc(r.note||'')}">`)}<p class="field-note">결제수단을 나누지 않으면 총매출만 저장합니다. 기존 정산정보가 있으면 현금·기타는 유지하고 카드 금액을 조정합니다. 수수료와 예정일은 실제 정산표로 확인해 주세요.</p></details>`;
- const expenseCategories=[...new Set([...EXPENSE_CATEGORIES,...(r.category?[r.category]:[])])];
- const expenseBody=`<div class="sale-entry-date">${field('지출일',`<input name="date" type="date" value="${entryDate}" max="${TODAY}" required aria-label="지출일">`)}</div><div class="form-field expense-category-field"><label>지출 항목</label><div class="choice-row">${expenseCategories.map(c=>`<label><input type="radio" name="category" value="${esc(c)}" ${(r.category||'상품매입')===c?'checked':''}><span>${esc(c)}</span></label>`).join('')}</div></div>${field('사용처 / 내용',`<input name="vendor" placeholder="예: 라면 매입 또는 카드 대금 납부" value="${esc(r.vendor||'')}" maxlength="80" required aria-label="사용처 또는 내용">`)}<div class="sale-entry-primary expense-entry-primary"><label for="entry-amount">지출 금액</label><div class="sale-entry-amount-row">${inputAmount('entry-amount',r.amount||0)}<button class="primary entry-inline-save expense-inline-save" type="submit" aria-label="지출 저장" title="지출 저장">${icon('save')}</button></div></div><div class="money-steps sale-money-steps"><button type="button" data-action="amount-add" data-target="entry-amount" data-value="10000">+1만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="50000">+5만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="100000">+10만</button><button type="button" data-action="amount-reset" data-target="entry-amount">지우기</button></div><details class="sale-entry-extra"><summary>메모 <span>선택</span>${icon('down')}</summary>${field('메모 · 선택',`<input name="note" placeholder="추가로 남길 내용" value="${esc(r.note||'')}" maxlength="200">`)}</details>`;
+ const entryCategory=r.category==='카드대금'?'카드 대금':r.category;const expenseCategories=[...new Set([...EXPENSE_CATEGORIES,...(entryCategory?[entryCategory]:[])])];
+ const expenseBody=`<div class="sale-entry-date">${field('지출일',`<input name="date" type="date" value="${entryDate}" max="${TODAY}" required aria-label="지출일">`)}</div><div class="form-field expense-category-field"><label>지출 항목</label><div class="choice-row">${expenseCategories.map(c=>`<label><input type="radio" name="category" value="${esc(c)}" ${(entryCategory||'상품매입')===c?'checked':''}><span>${esc(c)}</span></label>`).join('')}</div></div>${field('사용처 / 내용',`<input name="vendor" placeholder="예: 라면 매입 또는 카드 대금 납부" value="${esc(r.vendor||'')}" maxlength="80" required aria-label="사용처 또는 내용">`)}<div class="sale-entry-primary expense-entry-primary"><label for="entry-amount">지출 금액</label><div class="sale-entry-amount-row">${inputAmount('entry-amount',r.amount||0)}<button class="primary entry-inline-save expense-inline-save" type="submit" aria-label="지출 저장" title="지출 저장">${icon('save')}</button></div></div><div class="money-steps sale-money-steps"><button type="button" data-action="amount-add" data-target="entry-amount" data-value="10000">+1만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="50000">+5만</button><button type="button" data-action="amount-add" data-target="entry-amount" data-value="100000">+10만</button><button type="button" data-action="amount-reset" data-target="entry-amount">지우기</button></div><details class="sale-entry-extra"><summary>메모 <span>선택</span>${icon('down')}</summary>${field('메모 · 선택',`<input name="note" placeholder="추가로 남길 내용" value="${esc(r.note||'')}" maxlength="200">`)}</details>`;
  const body=`${!existing?`<div class="entry-type"><button type="button" data-action="entry-type" data-type="sale" class="${type==='sale'?'active':''}">매출</button><button type="button" data-action="entry-type" data-type="expense" class="${type==='expense'?'active':''}">지출</button></div>`:''}${type==='sale'?saleBody:expenseBody}`;
  sheet(type==='sale'?(entryDate===TODAY?'오늘 매출':'일매출')+(initial?' 수정':' 입력'):existing?'지출 수정':'지출 입력',body,`${existing?`<button type="button" class="danger-btn" style="flex:0 0 49px;padding:10px" data-action="delete-record" data-id="${r.id}" data-type="${type}" aria-label="기록 삭제">${icon('trash')}</button>`:''}`,{form:'entry-form',name:'entry',caption:'QUICK ENTRY'});
  modalContext={entryType:type,editing:!!existing,id:r.id||'',split:false};
@@ -642,7 +757,7 @@ function homeYearSummary(){
  const indexes=[...new Set(Array.from({length:Math.min(5,rows.length)},(_,i)=>Math.round(i*(rows.length-1)/Math.max(1,Math.min(5,rows.length)-1))))];
  const selected=Math.max(0,rows.findIndex(r=>r.date===flow.selected));
  const yearLabel=flow.start.slice(0,4)===String(ANALYTICS_YEAR)?'올해 매출':'조회 매출';
- return '<section class="home-yoy-card"><div class="flow-card-title"><h2>작년 같은 기간과 비교</h2><span>등록된 매출 기준</span></div><div class="yoy-equation"><div class="metric-sales"><small>'+yearLabel+'</small><strong>'+(c.current?metricAmount(c.sales,'sales',{editable:true,money:true}):'예정')+'</strong></div><i>−</i><div class="metric-previous"><small>작년 매출</small><strong>'+metricAmount(c.priorSales,'sales',{money:true})+'</strong></div><i>=</i><div class="metric-balance '+changeTone(c.delta)+'"><small>차이</small><strong>'+(c.delta===null?'비교 자료 없음':signed(c.delta)+'<span>원</span>')+'</strong></div></div><div class="home-yoy-dates"><span>조회 '+shortRange(...c.bounds)+'</span><span>작년 '+shortRange(...c.prior)+'</span></div><div class="comparison-chart-heading"><strong>누적 매출 비교</strong><span class="year-chart-legend"><i class="current"></i>조회 <i class="previous"></i>작년 <small>만원</small></span></div>'+comparisonChart(rows,{id:'home-yoy',action:'home-yoy-pick',title:'선택 기간의 누적 매출 비교',selected,labels:indexes.map(i=>({action:'open-day',date:rows[i].date,text:md(rows[i].date),label:rows[i].date}))})+'<p class="flow-note">날짜를 누르면 상세 · '+(flow.end>TODAY?'상단 합계는 오늘까지 같은 날짜 비교. 미래 구간은 작년 참고. ':'')+((c.current?.missing||c.previous.missing)?'매출 미입력: 조회 '+(c.current?.missing||0)+'일 / 작년 '+c.previous.missing+'일. 입력된 금액만 합산합니다.':'같은 기간의 등록 매출을 누적합니다.')+'</p></section>';
+ return '<section class="home-yoy-card"><div class="flow-card-title"><h2>작년 같은 기간과 비교</h2><span>등록된 매출 기준</span></div><div class="yoy-equation"><div class="metric-sales"><small>'+yearLabel+'</small><strong>'+(c.current?metricAmount(c.sales,'sales',{editable:true,money:true}):'예정')+'</strong></div><div class="metric-previous"><small>작년 매출</small><strong>'+metricAmount(c.priorSales,'sales',{money:true})+'</strong></div><div class="metric-balance '+changeTone(c.delta)+'"><small>차이</small><strong>'+(c.delta===null?'비교 자료 없음':signed(c.delta)+'<span>원</span>')+'</strong></div></div><div class="home-yoy-dates"><span>조회 '+shortRange(...c.bounds)+'</span><span>작년 '+shortRange(...c.prior)+'</span></div><div class="comparison-chart-heading"><strong>누적 매출 비교</strong><span class="year-chart-legend"><i class="current"></i>조회 <i class="previous"></i>작년 <small>만원</small></span></div>'+comparisonChart(rows,{id:'home-yoy',action:'home-yoy-pick',title:'선택 기간의 누적 매출 비교',selected,labels:indexes.map(i=>({action:'open-day',date:rows[i].date,text:md(rows[i].date),label:rows[i].date}))})+'<p class="flow-note">날짜를 누르면 상세 · '+(flow.end>TODAY?'상단 합계는 오늘까지 같은 날짜 비교. 미래 구간은 작년 참고. ':'')+((c.current?.missing||c.previous.missing)?'매출 미입력: 조회 '+(c.current?.missing||0)+'일 / 작년 '+c.previous.missing+'일. 입력된 금액만 합산합니다.':'같은 기간의 등록 매출을 누적합니다.')+'</p></section>';
 }
 function homeForecastSummary(){
  const f=forecastValues();
@@ -866,7 +981,7 @@ saveEntry=async function(form){
   view.date=date;return productionWrite('sale',{date,amount,note:String(fd.get('note')||''),settlement},'매출을 서버에 저장했어요.');
  }
  const vendor=String(fd.get('vendor')||'').trim();if(!vendor)return showError('사용처나 내용을 입력해 주세요.');
- return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:String(fd.get('note')||'')},'비용을 서버에 저장했어요.');
+ return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:paymentComposeNote(fd.get('note'),fd.get('payment-link'))},'비용을 서버에 저장했어요.');
 };
 const productionProductForm=openProductForm;
 openProductForm=function(...args){productionProductForm(...args);modalContext.requestId=requestId();};
@@ -928,6 +1043,116 @@ setInterval(()=>{if(!document.hidden&&!modalName)void refreshProduction(true);},
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!modalName)void refreshProduction(true);});
 render();
 
+/* Payment summaries are derived from real expense entries, never bank debit claims. */
+const paymentUi={index:0,paused:false,timer:null};
+function paymentConfig(){
+ const rules=db.paymentRulesConfigured?db.paymentRules:paymentInferredRules(db.expenses.filter(e=>e.date<=TODAY));
+ return paymentValidateConfig({rules,closedDays:db.paymentClosedDays||[]});
+}
+function paymentItems(){try{return paymentVisibleInstances(paymentConfig(),db.expenses,TODAY);}catch{return[];}}
+const paymentStateLabel={paid:'납부 완료',pending:'납부 예정',partial:'일부 납부',overdue:'기한 지남'};
+function paymentBannerContent(){
+ if(db.connection?.paymentSettingsError)return '<button type="button" class="payment-empty" data-action="production-refresh">'+icon('alert')+'<span>납부일 설정을 불러오지 못했어요.<small>눌러서 다시 확인</small></span></button>';
+ const items=paymentItems();paymentUi.index=items.length?paymentUi.index%items.length:0;
+ const item=items[paymentUi.index];
+ if(!item)return '<button type="button" class="payment-empty" data-action="payment-settings">'+icon('calendar')+'<span>매월 납부할 항목을 등록하세요.<small>임대료·카드 결제일을 한눈에</small></span>'+icon('plus')+'</button>';
+ const actual=item.status==='paid'?item.paidAmount:item.rule.amount,amount=actual?won(actual):'금액 미정';
+ const days=daysBetween(TODAY,item.due),when=item.status==='paid'?md(item.records.map(e=>e.date).sort().at(-1))+' 비용 입력 · 납부일 '+md(item.due):md(item.due)+' '+weekday(item.due)+'요일'+(days===0?' · 오늘':days>0?' · D−'+days:' · '+Math.abs(days)+'일 지남');
+ return '<div class="payment-roll-row"><button type="button" class="payment-roll-item is-'+item.status+'" data-action="payment-detail" data-id="'+esc(item.key)+'" aria-label="'+esc(paymentStateLabel[item.status]+' '+item.rule.name+' '+amount+' '+when)+'"><span class="payment-status-icon">'+icon(item.status==='paid'?'check':item.status==='overdue'?'alert':item.rule.type==='card'?'card':'calendar')+'</span><span class="payment-roll-copy"><span class="payment-roll-head"><span class="payment-status">'+paymentStateLabel[item.status]+'</span><strong>'+esc(item.rule.name)+'</strong><b>'+amount+'</b></span><span class="payment-roll-date">'+when+(item.adjusted?' · 휴일 조정':'')+(!item.calendarVerified?' · 공휴일 확인 필요':'')+'</span></span></button><div class="payment-roll-controls"><button type="button" class="icon-button" data-action="payment-settings" aria-label="정기 납부일 설정">'+icon('settings')+'</button><div><button type="button" class="payment-next" data-action="payment-next" aria-label="다음 납부 알림">'+(paymentUi.index+1)+'/'+items.length+icon('right')+'</button><button type="button" class="payment-pause" data-action="payment-pause" aria-pressed="'+paymentUi.paused+'" aria-label="'+(paymentUi.paused?'납부 알림 롤링 재개':'납부 알림 롤링 일시정지')+'">'+icon(paymentUi.paused?'play':'pause')+'</button></div></div></div>';
+}
+function paymentBanner(){return '<section class="payment-banner" aria-label="정기 납부 알림" data-swipe-ignore="true"><div id="payment-roll" aria-live="off">'+paymentBannerContent()+'</div></section>';}
+function paymentStartTicker(){
+ if(paymentUi.timer!==null){clearInterval(paymentUi.timer);paymentUi.timer=null;}
+ if(view.page!=='today'||paymentItems().length<2||typeof setInterval!=='function')return;
+ paymentUi.timer=setInterval(()=>{
+  const root=$('#payment-roll'),banner=root?.closest('.payment-banner');
+  if(!root||document.hidden||modalName||paymentUi.paused||banner?.matches(':hover,:focus-within'))return;
+  paymentUi.index=(paymentUi.index+1)%paymentItems().length;root.innerHTML=paymentBannerContent();
+ },3000);
+}
+function expenseCardSelector(){
+ const form=$('#entry-form');if(!form||modalContext.entryType!=='expense')return;
+ const vendor=form.querySelector('[name=vendor]'),fieldBox=vendor.closest('.form-field'),label=fieldBox.querySelector('label');
+ const note=form.querySelector('[name=note]'),existing=db.expenses.find(e=>e.id===modalContext.id),link=existing?.paymentLink||paymentExtractTag(note.value);if(link){note.value=paymentCleanNote(note.value);form.insertAdjacentHTML('beforeend','<input type="hidden" name="payment-link" value="'+esc(link)+'">');}
+ const ordinaryPlaceholder=vendor.placeholder,ordinaryAria=vendor.getAttribute('aria-label');let ordinaryValue=vendor.value,lastCategory=form.querySelector('[name=category]:checked')?.value;
+ const host=document.createElement('div');host.className='expense-card-select-wrap';host.hidden=true;
+ host.innerHTML='<select id="expense-card-company" aria-label="카드사" name="card-company"><option value="">카드사 선택</option>'+PAYMENT_CARD_COMPANIES.map(name=>'<option value="'+esc(name)+'">'+esc(name)+'</option>').join('')+'<option value="__other">기타 카드사 · 직접 입력</option></select><p class="field-note">결제일은 홈의 납부일 설정에서 한 번 등록하세요.</p>';
+ fieldBox.insertBefore(host,vendor);const select=host.querySelector('select');
+ function update(fromCategory=false){
+  const card=['카드 대금','카드대금'].includes(form.querySelector('[name=category]:checked')?.value);
+  if(card){
+   const entering=fromCategory&&lastCategory!=='카드 대금'&&lastCategory!=='카드대금';if(entering)ordinaryValue=vendor.value;
+   if(fromCategory||host.hidden){const name=paymentCardName(vendor.value);select.value=PAYMENT_CARD_COMPANIES.includes(name)?name:!entering&&vendor.value?'__other':'';}
+   host.hidden=false;select.required=true;label.textContent='카드사';label.htmlFor='expense-card-company';
+   const other=select.value==='__other';vendor.hidden=!other;vendor.required=other;vendor.placeholder='카드사 이름 입력';vendor.setAttribute('aria-label','카드사 이름');
+   if(!other)vendor.value=select.value;
+  }else{
+   if(!host.hidden)vendor.value=ordinaryValue;
+   host.hidden=true;select.required=false;vendor.hidden=false;vendor.required=true;vendor.placeholder=ordinaryPlaceholder;vendor.setAttribute('aria-label',ordinaryAria);label.textContent='사용처 / 내용';label.htmlFor=vendor.id;
+  }
+  lastCategory=form.querySelector('[name=category]:checked')?.value;
+ }
+ form.addEventListener('change',e=>{if(e.target.name==='category'){update(true);if(!host.hidden)select.focus({preventScroll:true});}if(e.target===select){if(select.value==='__other')vendor.value='';update();if(select.value==='__other')vendor.focus({preventScroll:true});}});
+ update(true);
+}
+const openEntryBeforePayments=openEntry;
+openEntry=function(...args){openEntryBeforePayments(...args);expenseCardSelector();};
+function paymentRuleRow(rule){
+ const type=rule.type||'card',other=type==='other',card=type==='card';
+ return '<fieldset class="payment-rule-editor" data-rule-id="'+esc(rule.id)+'"><div class="payment-rule-editor-head"><strong>'+esc(rule.name||(card?'카드 결제일':'정기 납부'))+'</strong><button type="button" class="icon-button" data-action="payment-remove-rule" data-id="'+esc(rule.id)+'" aria-label="납부 항목 삭제">'+icon('trash')+'</button></div><div class="payment-rule-grid"><label>항목<select data-field="type"><option value="rent" '+(type==='rent'?'selected':'')+'>임대료</option><option value="card" '+(card?'selected':'')+'>카드 대금</option><option value="other" '+(other?'selected':'')+'>기타 정기 비용</option></select></label>'+(card?'<label>카드사<select data-field="card" required><option value="">카드사 선택</option>'+[...new Set([...PAYMENT_CARD_COMPANIES,...(rule.card?[rule.card]:[])])].map(name=>'<option value="'+esc(name)+'" '+(rule.card===name?'selected':'')+'>'+esc(name)+'</option>').join('')+'</select></label>':other?'<label>항목·사용처 이름<input data-field="name" value="'+esc(rule.name||'')+'" maxlength="60" required></label>':'<div class="payment-rent-hint">'+icon('bank')+'매월 임대료</div>')+'<label>매월 납부일<select data-field="day">'+Array.from({length:31},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(Number(rule.day||1)===n?'selected':'')+'>'+n+'일'+(n===31?' · 말일':'')+'</option>').join('')+'</select></label><label>예상 금액 · 선택<input data-field="amount" inputmode="numeric" data-money value="'+(rule.amount?fmt(rule.amount):'')+'" placeholder="변동 금액은 비워두세요"></label></div><label class="payment-rule-active"><input type="checkbox" data-field="active" '+(rule.active!==false?'checked':'')+'>알림 사용</label></fieldset>';
+}
+function readPaymentRule(row){
+ const value=field=>row.querySelector('[data-field="'+field+'"]')?.value;
+ return{id:row.dataset.ruleId,type:value('type'),name:value('name')||'',card:value('card')||'',day:Number(value('day')),amount:num(value('amount')),active:row.querySelector('[data-field=active]').checked};
+}
+function openPaymentSettings(){
+ let config;try{config=paymentConfig();}catch{config={rules:[],closedDays:[]};}
+ sheet('매월 납부일 설정','<p class="payment-settings-intro">주말·공휴일은 다음 영업일로 옮깁니다. 비용에 입력된 내역과 연결해 납부 상태를 표시합니다.</p><div id="payment-rules-list">'+config.rules.map(paymentRuleRow).join('')+'</div><button type="button" class="secondary full" data-action="payment-add-rule">'+icon('plus')+'납부 항목 추가</button><details class="payment-calendar-options"><summary>임시휴일 추가 '+icon('down')+'</summary>'+field('추가 휴일 · 한 줄에 날짜 1개','<textarea name="closed-days" rows="3" placeholder="예: 2026-12-31">'+esc(config.closedDays.join('\n'))+'</textarea>')+'<p class="field-note">2026·2027년 공휴일·대체공휴일 반영 ('+PAYMENT_CALENDAR_CHECKED+' 확인). 추가 지정되는 임시공휴일은 여기에서 등록할 수 있어요.</p></details><p class="field-note spacer">31일이 없는 달은 그달 말일 기준입니다. 카드사는 카드별 실제 결제일을 입력해 주세요. 이 설정은 이체를 실행하지 않습니다.</p>','<button type="submit" class="primary">'+icon('check')+'납부일 적용</button>',{name:'payment-settings',form:'payment-settings-form'});
+}
+function openPaymentDetail(key){
+ const item=paymentItems().find(i=>i.key===key);if(!item)return;
+ const paid=item.status==='paid';
+ sheet('정기 납부 확인','<div class="payment-detail-status is-'+item.status+'">'+icon(paid?'check':'clock')+'<span>'+paymentStateLabel[item.status]+'</span><strong>'+esc(item.rule.name)+'</strong></div><div class="payment-detail-lines"><div><span>예정 납부일</span><strong>'+item.due.replaceAll('-','.')+' '+weekday(item.due)+'</strong></div>'+(item.adjusted?'<div><span>휴일 조정 전</span><strong>'+item.nominal.replaceAll('-','.')+'</strong></div>':'')+'<div><span>예상 금액</span><strong>'+(item.rule.amount?won(item.rule.amount):'미정 · 변동 금액')+'</strong></div><div><span>비용 입력 합계</span><strong>'+won(item.paidAmount)+'</strong></div>'+(item.status==='partial'?'<div><span>남은 금액</span><strong>'+won(item.remaining)+'</strong></div>':'')+'</div><p class="field-note">비용 입력 기준입니다. 은행 자동이체 완료를 조회한 표시는 아닙니다. 매월 '+item.rule.day+'일'+(item.rule.day===31?' (없는 달은 말일)':'')+' · 해당 월 '+item.month+'</p>'+(item.records.length?'<h3 class="spacer">연결된 비용</h3><div class="payment-linked-records">'+item.records.map(e=>'<button type="button" class="secondary full" data-action="edit-record" data-type="expense" data-id="'+esc(e.id)+'">'+esc(e.vendor||e.category)+' · '+md(e.date)+' · '+won(e.amount)+icon('right')+'</button>').join(''):'')+(!item.calendarVerified?'<p class="production-notice">해당 연도의 공휴일 자료 확인이 필요합니다. 실제 납부일을 확인해 주세요.</p>':''),'<button type="button" class="secondary" data-action="payment-settings">납부일 설정</button>'+(!paid?'<button type="button" class="primary" data-action="payment-enter" data-id="'+esc(key)+'">비용 입력</button>':'<button type="button" class="primary" data-action="close-modal">확인</button>'),{name:'payment-detail'});
+}
+function paymentEnterExpense(key){
+ const item=paymentItems().find(i=>i.key===key);if(!item)return;
+ openEntry('expense','',TODAY);const form=$('#entry-form'),category=item.rule.type==='rent'?'임대료':item.rule.type==='card'?'카드 대금':'기타';
+ const radio=[...form.querySelectorAll('[name=category]')].find(e=>e.value===category);radio.checked=true;radio.dispatchEvent(new Event('change',{bubbles:true}));
+ const select=form.querySelector('#expense-card-company'),vendor=form.querySelector('[name=vendor]');
+ if(item.rule.type==='card'){select.value=PAYMENT_CARD_COMPANIES.includes(item.rule.card)?item.rule.card:'__other';select.dispatchEvent(new Event('change',{bubbles:true}));vendor.value=item.rule.card;}else vendor.value=item.rule.name;
+ form.querySelector('[name=note]').value='정기 납부 · '+item.month.replace('-','년 ')+'월';form.insertAdjacentHTML('beforeend','<input type="hidden" name="payment-link" value="'+esc(paymentTag(item.rule.id,item.month))+'">');
+ const amount=form.querySelector('#entry-amount');amount.value=item.rule.amount?fmt(item.remaining||item.rule.amount):'0';amount.focus({preventScroll:true});amount.select();
+}
+const homeBeforePayments=renderToday;
+renderToday=()=>homeBeforePayments().replace('<section class="today-tiles"',paymentBanner()+'<section class="today-tiles"');
+const renderBeforePayments=render;
+render=function(){renderBeforePayments();paymentStartTicker();};
+const settingsBeforePayments=openSettings;
+openSettings=function(...args){settingsBeforePayments(...args);$('.setting-buttons')?.insertAdjacentHTML('afterbegin','<button type="button" class="secondary" data-action="payment-settings">'+icon('calendar')+'매월 납부일 설정</button>');};
+const actionBeforePayments=action;
+action=function(el){
+ const a=el.dataset.action;
+ if(productionBusy)return;
+ if(a==='payment-settings'){openPaymentSettings();return;}
+ if(a==='payment-detail'){openPaymentDetail(el.dataset.id);return;}
+ if(a==='payment-enter'){paymentEnterExpense(el.dataset.id);return;}
+ if(a==='payment-next'){paymentUi.index=(paymentUi.index+1)%Math.max(1,paymentItems().length);const root=$('#payment-roll');if(root)root.innerHTML=paymentBannerContent();return;}
+ if(a==='payment-pause'){paymentUi.paused=!paymentUi.paused;const root=$('#payment-roll');if(root)root.innerHTML=paymentBannerContent();return;}
+ if(a==='payment-add-rule'){const list=$('#payment-rules-list');if(list.children.length>=50)return showError('최대 50개까지 등록할 수 있습니다.');list.insertAdjacentHTML('beforeend',paymentRuleRow({id:uid('pay'),type:'card',name:'',card:'',day:1,amount:0,active:true}));list.lastElementChild.scrollIntoView({block:'nearest'});return;}
+ if(a==='payment-remove-rule'){const row=[...$$('.payment-rule-editor')].find(r=>r.dataset.ruleId===el.dataset.id);row?.remove();return;}
+ return actionBeforePayments(el);
+};
+const submitBeforePayments=submitForm;
+submitForm=async function(form){
+ if(form.id!=='payment-settings-form')return submitBeforePayments(form);
+ try{
+  const config=paymentValidateConfig({rules:[...form.querySelectorAll('.payment-rule-editor')].map(readPaymentRule),closedDays:form.querySelector('[name=closed-days]').value.split(/[\n,]+/).map(x=>x.trim()).filter(Boolean)});
+  return productionWrite('payment-rules',config,'매월 납부일을 서버에 저장했어요.');
+ }catch(error){showError(error.message);}
+};
+document.addEventListener('change',e=>{if(e.target.matches('.payment-rule-editor [data-field=type]')){const row=e.target.closest('.payment-rule-editor'),r=readPaymentRule(row);if(r.type==='rent')r.name='임대료';else if(r.type==='card')r.name=r.card;row.outerHTML=paymentRuleRow(r);}});
+render();
+
 /* Shared, locally bundled SVG icons keep action meanings consistent. */
 Object.assign(iconPaths,{
  businessAll:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -959,6 +1184,7 @@ const PERIOD_ICON_NAMES={today:'sun',week:'calendarWeek',month:'calendar',lastMo
 function periodIconName(value){return PERIOD_ICON_NAMES[value]||'calendar';}
 function businessFilterVisual(value){return BUSINESS_LOGOS[value]?`<img class="business-brand-image" src="${BUSINESS_LOGOS[value]}" alt="" draggable="false">`:icon(value==='unclassified'?'unclassified':'businessAll');}
 const ACTION_ICON_SPECS={
+ 'payment-settings':['calendar','납부일 설정'],'payment-add-rule':['plus','납부 항목 추가'],'payment-enter':['expense','비용 입력'],
  export:['download','내보내기','tile'], 'product-new':['packagePlus','상품 등록','tile'],
  'barcode-open':['barcode','바코드'], 'barcode-camera':['camera','카메라'],
  'receipt-open':['receipt','영수증'], 'receipt-history':['clock','입고 기록'],
@@ -977,6 +1203,7 @@ const ACTION_ICON_SPECS={
  'sample-bank':['plus','입금 체험'], 'sms-demo':['refresh','새로고침']
 };
 const FORM_ICON_SPECS={
+ 'payment-settings-form':['check','납부일 적용'],
  'auth-form':['login','로그인'],
  'flow-range-form':['calendar','적용'],'range-form':['calendar','적용'],'deposit-range-form':['calendar','적용'],'date-form':['calendar','날짜 보기'],
  'entry-form':['save','저장'],'goal-form':['save','목표 저장'],'match-form':['link','입금 연결'],'classify-form':['tag','분류 저장'],

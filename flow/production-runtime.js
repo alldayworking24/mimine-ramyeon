@@ -68,7 +68,7 @@ saveEntry=async function(form){
   view.date=date;return productionWrite('sale',{date,amount,note:String(fd.get('note')||''),settlement},'매출을 서버에 저장했어요.');
  }
  const vendor=String(fd.get('vendor')||'').trim();if(!vendor)return showError('사용처나 내용을 입력해 주세요.');
- return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:String(fd.get('note')||'')},'비용을 서버에 저장했어요.');
+ return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:paymentComposeNote(fd.get('note'),fd.get('payment-link'))},'비용을 서버에 저장했어요.');
 };
 const productionProductForm=openProductForm;
 openProductForm=function(...args){productionProductForm(...args);modalContext.requestId=requestId();};

@@ -29,6 +29,7 @@ const PERIOD_ICON_NAMES={today:'sun',week:'calendarWeek',month:'calendar',lastMo
 function periodIconName(value){return PERIOD_ICON_NAMES[value]||'calendar';}
 function businessFilterVisual(value){return BUSINESS_LOGOS[value]?`<img class="business-brand-image" src="${BUSINESS_LOGOS[value]}" alt="" draggable="false">`:icon(value==='unclassified'?'unclassified':'businessAll');}
 const ACTION_ICON_SPECS={
+ 'payment-settings':['calendar','납부일 설정'],'payment-add-rule':['plus','납부 항목 추가'],'payment-enter':['expense','비용 입력'],
  export:['download','내보내기','tile'], 'product-new':['packagePlus','상품 등록','tile'],
  'barcode-open':['barcode','바코드'], 'barcode-camera':['camera','카메라'],
  'receipt-open':['receipt','영수증'], 'receipt-history':['clock','입고 기록'],
@@ -47,6 +48,7 @@ const ACTION_ICON_SPECS={
  'sample-bank':['plus','입금 체험'], 'sms-demo':['refresh','새로고침']
 };
 const FORM_ICON_SPECS={
+ 'payment-settings-form':['check','납부일 적용'],
  'auth-form':['login','로그인'],
  'flow-range-form':['calendar','적용'],'range-form':['calendar','적용'],'deposit-range-form':['calendar','적용'],'date-form':['calendar','날짜 보기'],
  'entry-form':['save','저장'],'goal-form':['save','목표 저장'],'match-form':['link','입금 연결'],'classify-form':['tag','분류 저장'],

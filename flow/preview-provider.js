@@ -3,6 +3,8 @@ function createMiminePreviewProvider(options={}){
 /* Explicit demo provider; no production requests. */
 const today='2026-11-03',plus=(date,n)=>new Date(Date.parse(date+'T12:00Z')+n*86400000).toISOString().slice(0,10);
 let fixture={version:1,analyticsHistory:2,supplyHistory:1,goal:3000000,settings:{autoMatch:true,largeType:false},sales:[],expenses:[],products:[],events:[],links:[],receipts:[],payerRules:[{id:'rule1',payer:'키움페이',business:'mimine',label:'카드 정산',active:true}],connection:{refreshedAt:new Date().toISOString(),bankError:'',stockError:'',truncated:false}};
+fixture.paymentRulesConfigured=true;fixture.paymentClosedDays=[];
+fixture.paymentRules=[{id:'rent-default',type:'rent',name:'임대료',card:'',day:1,amount:500000,active:true},{id:'demo-samsung',type:'card',name:'삼성카드',card:'삼성카드',day:10,amount:0,active:true},{id:'demo-hyundai',type:'card',name:'현대카드',card:'현대카드',day:25,amount:0,active:true}];
 for(let d='2026-10-01';d<=today;d=plus(d,1)){const amount=150000+(Number(d.slice(8))*3710)%80000;fixture.sales.push({id:'s-'+d,remoteId:d,date:d,amount,card:amount-10000,cash:10000,other:0,fee:2000,due:plus(d,2),settlementKnown:true,settlementConsistent:true,note:'가상 일매출',source:'가상 데이터'});fixture.sales.push({id:'s-'+d.replace('2026','2025'),date:d.replace('2026','2025'),amount:amount-20000,card:amount-30000,cash:10000,other:0,fee:1800,due:'',settlementKnown:true,note:'작년 가상 매출'});}
 const priorDates=new Set(fixture.sales.map(s=>s.date));
 for(let d='2025-01-01';d<='2025-12-31';d=plus(d,1)){if(priorDates.has(d))continue;const amount=130000+(Number(d.slice(8))*3710)%80000;fixture.sales.push({id:'s-'+d,date:d,amount,card:amount-10000,cash:10000,other:0,fee:1800,due:'',settlementKnown:true,note:'작년 가상 매출'});}
@@ -14,10 +16,11 @@ fixture.products=[{id:'1',name:'신라면',category:'라면',barcode:'2000000000
 for(const[id,date,payer,amount,business]of[['bank1',today,'키움페이',125000,'mimine'],['bank2',today,'우리관리',350000,'unclassified'],['bank3','2026-10-10','키움페이',215000,'mimine'],['bank4','2026-10-25','키움페이',195000,'mimine'],['bank5','2026-10-31','키움페이',174000,'mimine']])fixture.events.push({id,date,time:'12:30',payer,amount,business,autoRegistered:business==='mimine',excluded:false});
 let sequence=10,failNext=false,requests=new Set();
 const log=text=>options.onLog?.(text);
-const provider={isDemo:true,today:()=>today,launch:'',snapshot:async()=>structuredClone(fixture),legacy:()=>log('기존 관리 화면으로 이동하는 경로입니다. 운영판에서는 기존 관리 기능을 엽니다.'),logout:()=>log('로컬 가상 화면에서는 로그아웃하지 않습니다.'),invoke:async(command,p)=>{
+const provider={isDemo:true,today:()=>today,launch:'',snapshot:async()=>{const next=structuredClone(fixture);next.expenses=next.expenses.map(e=>({...e,paymentLink:String(e.note||'').match(/\[미미네납부:[a-zA-Z0-9_-]+:\d{4}-\d{2}\]/)?.[0]||e.paymentLink||'',note:String(e.note||'').replace(/\[미미네납부:[a-zA-Z0-9_-]+:\d{4}-\d{2}\]/g,'').trim()}));return next;},legacy:()=>log('기존 관리 화면으로 이동하는 경로입니다. 운영판에서는 기존 관리 기능을 엽니다.'),logout:()=>log('로컬 가상 화면에서는 로그아웃하지 않습니다.'),invoke:async(command,p)=>{
  log('저장 경로: '+command+' · '+new Date().toLocaleTimeString());if(failNext){failNext=false;throw new Error('저장 실패 체험입니다. 입력값을 유지했습니다. 다시 저장해 주세요.');}
  let next=structuredClone(fixture);
- if(command==='delete'){next[p.type==='sale'?'sales':'expenses']=next[p.type==='sale'?'sales':'expenses'].filter(r=>r.id!==p.id&&r.remoteId!==p.id);}
+ if(command==='payment-rules'){const config=paymentValidateConfig(p);next.paymentRules=config.rules;next.paymentClosedDays=config.closedDays;next.paymentRulesConfigured=true;}
+ else if(command==='delete'){next[p.type==='sale'?'sales':'expenses']=next[p.type==='sale'?'sales':'expenses'].filter(r=>r.id!==p.id&&r.remoteId!==p.id);}
  else if(command==='stocktake'){const product=next.products.find(x=>x.id===p.productId);if(product){let remaining=p.qty;for(const b of product.batches){b.qty=Math.min(b.originalQty??b.qty,remaining);remaining-=b.qty;}if(remaining>0)throw new Error('입고 수량을 초과할 수 없습니다.');}}
  else if(command==='sale'){const old=next.sales.find(s=>s.date===p.date),r={...old,id:'s-'+p.date,date:p.date,amount:p.amount,note:p.note};if(p.settlement)Object.assign(r,p.settlement,{due:p.settlement.dueDate,settlementKnown:true});if(old)Object.assign(old,r);else next.sales.push(r);}
  else if(command==='expense'){if(requests.has(p.requestId))return{duplicate:true};const old=next.expenses.find(e=>e.id===p.id);if(old)Object.assign(old,p);else next.expenses.push({...p,id:String(++sequence)});requests.add(p.requestId);}

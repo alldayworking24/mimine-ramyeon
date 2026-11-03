@@ -19,9 +19,10 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    rows('sales','sale_date'),rows('expenses','expense_date'),rows('products'),rows('product_categories'),rows('product_purchase_batches'),
    rows('mimine_stock_documents','created_at').then(data=>({data})).catch(error=>({data:[],error:error.message})),
    bankApi({action:'list',start,end:today}).then(data=>({data})).catch(error=>({data:{},error:error.message})),
-   rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message}))
+   rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message})),
+   db.from('mimine_settings').select('setting_value,updated_at').eq('setting_key','recurring_payment_rules_v1').maybeSingle().then(r=>{if(r.error)throw r.error;return{data:r.data};}).catch(error=>({data:null,error:error.message}))
   ]);
-  const[sr,er,pr,cr,br,docs,bankResult,images]=results,bank=bankResult.data;
+  const[sr,er,pr,cr,br,docs,bankResult,images,paymentSettings]=results,bank=bankResult.data;
   const productImages=new Map();
   for(const image of images.data.filter(i=>i.public_url).sort((a,b)=>Number(!!b.is_primary)-Number(!!a.is_primary)||Number(a.sort_order??Infinity)-Number(b.sort_order??Infinity)||Number(a.id)-Number(b.id))){const id=String(image.product_id);if(!productImages.has(id))productImages.set(id,image.public_url);}
   const settlements=new Map((bank.settlements||[]).map(s=>[s.sale_date,s]));
@@ -31,18 +32,25 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   let prefs={};try{prefs=JSON.parse(localStorage.getItem('mimine-flow-preferences')||'{}')}catch{}
   return {
    version:1,analyticsHistory:2,supplyHistory:1,goal:Number(prefs.goal||0),settings:{largeType:!!prefs.largeType,autoMatch:true},
+   paymentRulesConfigured:!!paymentSettings.data,paymentRules:paymentSettings.data?.setting_value?.rules||[],paymentClosedDays:paymentSettings.data?.setting_value?.closedDays||[],
    sales:sr.map(s=>{const t=settlements.get(s.sale_date);return{id:'s-'+s.sale_date,remoteId:String(s.id),date:s.sale_date,amount:Number(s.amount),card:Number(t?.card_amount||0),cash:Number(t?.cash_amount||0),other:Number(t?.other_amount||0),fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementConsistent:!t||Number(t.card_amount)+Number(t.cash_amount)+Number(t.other_amount)===Number(s.amount),note:s.memo||'',source:s.payment_method_name||'매출 장부'};}),
-   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:e.vendor?e.memo||'':''})),
+   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo)})),
    products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=br.filter(b=>String(b.product_id)===String(p.id)).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,imageUrl:productImages.get(String(p.id))||'',category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:docs.data.find(d=>d.supplier&&d.items.some(i=>String(i?.productId)===String(p.id)))?.supplier||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
    events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(d),time=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'}).format(d);return{id:e.id,date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||allocations.some(a=>a.event_id===e.id&&a.match_source==='auto')};}),
    links:allocations.map(a=>({id:a.event_id+'|'+a.sale_date,saleId:'s-'+a.sale_date,eventId:a.event_id,amount:Number(a.amount),method:a.match_source==='auto'?'자동':'수동'})),
    payerRules:(bank.aliases||[]).map(a=>({id:a.id,payer:a.payer,business:a.business,label:a.label,active:a.active})),
    receipts:docs.data.filter(d=>d.document_type==='receipt').reverse().map(d=>({id:d.id,date:d.purchase_date,supplier:d.supplier,total:Number(d.total),itemSubtotal:Number(d.item_subtotal),adjustment:Number(d.total)-Number(d.item_subtotal),items:d.items,imageData:d.image_data,rawText:d.raw_text,imageFingerprint:d.fingerprint,expenseId:d.expense_id})),
-   connection:{imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
+   connection:{paymentSettingsError:paymentSettings.error||'',imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
   };
  }
  async function invoke(command,payload){
-  await check();let result={};
+  const session=await check();let result={};
+  if(command==='payment-rules'){
+   const config=paymentValidateConfig(payload);
+   if(!session.user?.id)throw new Error('계정을 다시 확인해 주세요.');
+   const r=await db.from('mimine_settings').upsert({setting_key:'recurring_payment_rules_v1',setting_value:config,description:'매월 납부일과 임시휴일 설정',updated_by:session.user.id},{onConflict:'setting_key'});
+   if(r.error)throw new Error(r.error.message);return{ok:true};
+  }
   if(command==='bank')return bankApi(payload);
   if(command==='stock'){
    const r=await db.rpc('mimine_receive_stock',{p_request_id:payload.requestId,p_document:payload.document});if(r.error)throw new Error(r.error.message);return r.data;
