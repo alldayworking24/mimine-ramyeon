@@ -1,10 +1,22 @@
 {
   "name": "mimine-ramyeon",
   "private": true,
-  "version": "2026.11.2",
+  "version": "2026.11.3-unpublished",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node tests/finance.test.cjs && node tests/bank-handler.test.mjs && node tests/auto-match-sql.test.mjs"
+    "test": "node tests/finance.test.cjs && node tests/bank-handler.test.mjs && node tests/auto-match-sql.test.mjs && node tests/flow-stock.test.mjs && node tests/flow-bank.test.mjs && node tests/flow-bridge.test.mjs && node tests/root-entry.test.mjs",
+    "preview": "node build.mjs --preview && node preview-server.mjs"
   },
-  "devDependencies": {"@electric-sql/pglite": "0.5.14"}
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.14",
+    "@supabase/supabase-js": "2.118.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/kor": "1.0.0",
+    "@zxing/browser": "0.2.1",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fcfaf7">
+<meta name="description" content="미미네 매출·비용·입금·상품 관리">
+<title>미미네 · 매장 관리</title>
+<link rel="icon" href="__LOGO__">
+<style>/*__CSS__*/</style>
+</head>
+<body class="auth-loading">
+<div id="local-preview-note" class="local-preview-note" hidden>미리보기 · 가상 데이터입니다. 실제 매장 데이터는 변경하지 않습니다. <button id="preview-exit" type="button">실제 데이터 로그인</button></div>
+<section id="auth-view" class="auth-view" aria-label="미미네 로그인"><div class="auth-card"><div class="auth-brand"><img src="__LOGO__" alt=""><div><strong>미미네</strong><span>매출·비용·입금·상품 관리</span></div></div><h1>매장 운영을 한눈에</h1><p>기존 미미네 계정으로 로그인해 주세요.</p><form id="auth-form"><label>이메일<input name="email" type="email" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><button class="primary full" id="auth-submit" type="submit">로그인</button></form><p id="auth-message" role="status"></p><button class="secondary full" id="auth-preview" type="button">목업 화면 먼저 보기</button><a class="auth-account-link" href="legacy/index.html">계정 등록·비밀번호 관리</a></div></section>
+<a class="skip" href="#main">본문으로 이동</a>
+<div class="app-shell">
+<aside class="sidebar">
+<a class="brand" href="#today" aria-label="미미네 오늘 화면"><img src="__LOGO__" alt=""><span><strong>미미네</strong><small>라면가게 운영 노트</small></span></a>
+<div class="store-chip"><span class="store-dot"></span>미미네 라면가게 </div>
+<p class="nav-caption">매장 관리</p>
+<nav id="desktop-nav" aria-label="주 메뉴"></nav>
+<div class="sidebar-bottom"><button class="nav-item" data-action="navigate" data-page="reports" id="reports-nav"></button><button class="nav-item" data-action="settings" id="settings-nav"></button><div class="sidebar-note"><span class="tiny-dot"></span>운영 데이터 연결</div></div>
+</aside>
+<div class="workspace">
+<header class="topbar"><a class="mobile-brand" href="#today"><img src="__LOGO__" alt=""><strong>미미네</strong></a><div class="breadcrumb" id="breadcrumb">매장 관리 <span>/</span> 오늘</div><div class="top-actions"><span class="demo-badge"><i></i> 매장 운영</span><button class="icon-button" data-action="navigate" data-page="reports" aria-label="비교·예측" id="top-report"></button><button class="icon-button" data-action="settings" aria-label="설정" id="top-settings"></button><button class="primary compact desktop-add" data-action="entry">등록하기</button></div></header>
+<main id="main" tabindex="-1"><div class="boot-loading"><strong>운영 데이터를 불러오고 있어요.</strong><p>매출·비용·입금·재고를 확인하고 있습니다.</p></div></main>
+<footer class="desktop-footer">MIMINE STORE NOTE <span>매출·비용·입금·상품은 서버에 저장됩니다.</span></footer>
+</div>
+</div>
+<nav class="bottom-nav" id="mobile-nav" aria-label="하단 주 메뉴"></nav>
+<div id="modal-root"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>/*__JS__*/</script>
+</body>
+</html>

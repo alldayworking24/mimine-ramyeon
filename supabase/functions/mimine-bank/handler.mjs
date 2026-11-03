@@ -26,19 +26,28 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
  let truncated=false;const pages=async(path)=>{let all=[];for(let offset=0;offset<20000;offset+=1000){const rows=await db(path+'&limit=1000&offset='+offset);all.push(...rows);if(rows.length<1000)return all}truncated=true;return all};
  const settlements=await pages('mimine_settlements?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc');
  const allocations=await pages('mimine_bank_allocations?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc');
- let events=await pages('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,account_suffix&occurred_at=gte.'+encodeURIComponent(b.start+'T00:00:00+09:00')+'&occurred_at=lt.'+encodeURIComponent(b.end+'T23:59:59.999999+09:00')+'&order=occurred_at.desc,id');
+ let events=await pages('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&occurred_at=gte.'+encodeURIComponent(b.start+'T00:00:00+09:00')+'&occurred_at=lt.'+encodeURIComponent(b.end+'T23:59:59.999999+09:00')+'&order=occurred_at.desc,id');
  const missing=[...new Set(allocations.map(a=>a.event_id))].filter(id=>!events.some(e=>e.id===id));
- for(let i=0;i<missing.length;i+=100)events.push(...await db('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,account_suffix&id=in.('+missing.slice(i,i+100).join(',')+')'));
+ for(let i=0;i<missing.length;i+=100)events.push(...await db('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&id=in.('+missing.slice(i,i+100).join(',')+')'));
  const ids=events.map(e=>e.id);let classifications=[];
  for(let i=0;i<ids.length;i+=100)classifications.push(...await db('mimine_bank_classifications?select=*&event_id=in.('+ids.slice(i,i+100).join(',')+')'));
  // Include allocations outside the period for each visible event to show available balances accurately.
  let eventAllocations=[];for(let i=0;i<ids.length;i+=100)eventAllocations.push(...await pages('mimine_bank_allocations?select=*&event_id=in.('+ids.slice(i,i+100).join(',')+')&order=sale_date'));
  const devices=await db('adw_sms_devices?select=id,name,enabled,last_seen_at&order=created_at.desc');
  const rules=await db('mimine_bank_rules?select=*&order=updated_at.desc');
+ const aliases=await db('mimine_payer_aliases?select=*&order=updated_at.desc');
  const holds=await db('mimine_bank_holds?select=event_id');
  const matching=await db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:false,p_actor:email}});
  const matchHistory=await db('mimine_bank_audit?select=action,detail,created_at&action=eq.auto_match&order=created_at.desc&limit=10');
- return reply({matchHistory,rules,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ return reply({matchHistory,rules,aliases,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ }
+ case 'alias':{
+ if((b.id&&!uuid(b.id))||typeof b.payer!=='string'||!b.payer.trim()||b.payer.trim().length>100||!['mimine','adw','other'].includes(b.business)||typeof b.active!=='boolean'||String(b.label||'').length>80)return reply({error:'입금자명 규칙을 확인해 주세요.'},400);
+ const result=await db('rpc/mimine_bank_save_alias',{method:'POST',body:{p_id:b.id||null,p_payer:b.payer,p_business:b.business,p_label:String(b.label||''),p_active:b.active,p_actor:email}});return reply(result);
+ }
+ case 'exclude':{
+ if(!uuid(b.eventId)||typeof b.excluded!=='boolean'||String(b.reason||'').length>100||String(b.memo||'').length>160)return reply({error:'대상 제외 항목을 확인해 주세요.'},400);
+ await db('rpc/mimine_bank_exclude',{method:'POST',body:{p_event:b.eventId,p_excluded:b.excluded,p_reason:String(b.reason||''),p_memo:String(b.memo||''),p_actor:email}});return reply({ok:true});
  }
  case 'autoMatch':{
  const result=await db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:true,p_actor:email}});return reply(result);

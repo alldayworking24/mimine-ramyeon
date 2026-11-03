@@ -33,3 +33,10 @@ assert.equal((await handler(req({action:'autoMatch'}))).status,200);
 assert.equal((await handler(req({action:'releaseHold',eventId:'bad'}))).status,400);
 assert.equal((await handler(req({action:'allocate',eventId:'11111111-1111-4111-8111-111111111111',saleDate:'2026-10-27',amount:0}))).status,200);
 console.log('New actions: automatic match, rule validation, hold release validation, safe unlink passed.');
+
+assert.equal((await handler(req({action:'alias',payer:'입금자',business:'mimine',label:'정산',active:true}))).status,200);
+assert.equal((await handler(req({action:'alias',payer:'',business:'mimine',active:true}))).status,400);
+assert.equal((await handler(req({action:'alias',payer:'입금자',business:'bad',active:true}))).status,400);
+assert.equal((await handler(req({action:'exclude',eventId:'bad',excluded:true}))).status,400);
+assert.equal((await handler(req({action:'exclude',eventId:'11111111-1111-4111-8111-111111111111',excluded:true,reason:'기타',memo:'검증'}))).status,200);
+console.log('Flow handler: alias/exclusion validation and authorized RPC routing passed.');

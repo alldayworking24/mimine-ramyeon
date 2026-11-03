@@ -2,5 +2,14 @@
 dist/
 node_modules/
 .env*
+flow/vendor/auth/
+flow/vendor/barcode/
+flow/vendor/ocr/
 .openai/
 qa-preview/
+
+node_modules/
+dist/
+.openai/
+.netlify/
+.env*
