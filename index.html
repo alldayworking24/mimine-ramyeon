@@ -39,6 +39,34 @@ body{background:#f4f6fa}.topbar{height:63px;background:#ffffffec;padding:0 26px}
 
 /* The canonical index owns both the new login and the new workspace. */
 .auth-view{display:none;min-height:100dvh;padding:28px 18px;align-items:center;justify-content:center;background:#f7f8fb}.auth-loading .auth-view{display:flex}.auth-loading .app-shell,.auth-loading #mobile-nav,.auth-loading #modal-root,.auth-loading .skip{display:none}.auth-card{width:100%;max-width:410px;padding:26px;border-radius:22px;border:1px solid #e2e6ec;background:white;box-shadow:0 12px 44px #1f334509}.auth-brand{display:flex;gap:12px;align-items:center;margin-bottom:26px}.auth-brand img{width:48px;height:48px;object-fit:contain}.auth-brand strong{font-size:24px;color:#182434;display:block}.auth-brand span{display:block;color:#768291;font-size:12px;margin-top:4px}.auth-card h1{font-size:23px;margin-bottom:10px}.auth-card>p{font-size:13px;color:#748090;line-height:1.6}.auth-card label{display:block;font-size:13px;color:#465368;margin-top:16px}.auth-card input{display:block;min-width:0;width:100%;height:46px;margin-top:7px;border:1px solid #d8dfe8;border-radius:10px;padding:10px 12px;font:inherit;color:#203149}.auth-card form .primary{margin-top:22px}.auth-card #auth-message{min-height:22px;color:#a44737;font-size:12px;overflow-wrap:anywhere}.auth-account-link{display:block;margin-top:18px;text-align:center;font-size:12px;color:#6c788a}.local-preview-note{padding:7px 14px;background:#fff3d8;border-bottom:1px solid #eddbb8;color:#755a28;font-size:11px;text-align:center;line-height:1.6}.local-preview-note[hidden]{display:none}.local-preview-note button{border:0;background:transparent;color:#2363ca;text-decoration:underline;margin-left:6px;font:inherit;cursor:pointer}@media(max-width:480px){.auth-card{padding:22px}.auth-card h1{font-size:22px}}
+
+/* Contain the viewport and let narrow content shrink inside it. */
+html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x:none}
+.app-shell,.workspace,#main,.product-page,.page-heading>div,.product-toolbar,.search-line,.bank-layout,.report-grid,.sheet,.sheet-body{min-width:0;max-width:100%}
+#main{touch-action:pan-y pinch-zoom}
+.search-box input{min-width:0;width:0;flex:1}
+.search-box svg{flex-shrink:0}
+.product-filters,.deposit-presets{flex-wrap:wrap}
+.supply-quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.supply-quick-actions button{min-width:0;overflow-wrap:anywhere}
+.product-grid,.form-grid{min-width:0}
+.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.product-card,.product-card>*{min-width:0;max-width:100%}
+.product-stock{flex-wrap:wrap;gap:4px}
+.product-foot,.sheet-product-hero h3,.sheet-product-hero>div,.field-note{overflow-wrap:anywhere}
+.sheet-product-hero>div{min-width:0}
+.sheet-body input,.sheet-body select,.sheet-body textarea{min-width:0;max-width:100%}
+.product-visual{position:relative;flex-shrink:0;overflow:hidden}
+.product-visual .product-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;background:var(--product-bg,#f6e9e3)}
+@media(max-width:760px){
+ #main table{table-layout:fixed;width:100%;max-width:100%}
+ #main th,#main td{white-space:normal;overflow-wrap:anywhere}
+ .flow-presets,.period-presets,.range-buttons,.segmented{min-width:0;max-width:100%;flex-wrap:wrap}
+ .page-heading{gap:8px}.page-heading>button{flex-shrink:0}
+ .receipt-review-summary{flex-wrap:wrap}
+ .product-cost-prices>span{min-width:0;gap:3px}
+ .product-cost-prices b{overflow-wrap:anywhere;white-space:normal}
+}
 </style>
 </head>
 <body class="auth-loading">
@@ -119,9 +147,12 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   const results=await Promise.all([
    rows('sales','sale_date'),rows('expenses','expense_date'),rows('products'),rows('product_categories'),rows('product_purchase_batches'),
    rows('mimine_stock_documents','created_at').then(data=>({data})).catch(error=>({data:[],error:error.message})),
-   bankApi({action:'list',start,end:today}).then(data=>({data})).catch(error=>({data:{},error:error.message}))
+   bankApi({action:'list',start,end:today}).then(data=>({data})).catch(error=>({data:{},error:error.message})),
+   rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message}))
   ]);
-  const[sr,er,pr,cr,br,docs,bankResult]=results,bank=bankResult.data;
+  const[sr,er,pr,cr,br,docs,bankResult,images]=results,bank=bankResult.data;
+  const productImages=new Map();
+  for(const image of images.data.filter(i=>i.public_url).sort((a,b)=>Number(!!b.is_primary)-Number(!!a.is_primary)||Number(a.sort_order??Infinity)-Number(b.sort_order??Infinity)||Number(a.id)-Number(b.id))){const id=String(image.product_id);if(!productImages.has(id))productImages.set(id,image.public_url);}
   const settlements=new Map((bank.settlements||[]).map(s=>[s.sale_date,s]));
   const categories=new Map(cr.map(c=>[String(c.id),c.name]));
   const classifications=new Map((bank.classifications||[]).map(c=>[c.event_id,c]));
@@ -131,12 +162,12 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    version:1,analyticsHistory:2,supplyHistory:1,goal:Number(prefs.goal||0),settings:{largeType:!!prefs.largeType,autoMatch:true},
    sales:sr.map(s=>{const t=settlements.get(s.sale_date);return{id:'s-'+s.sale_date,remoteId:String(s.id),date:s.sale_date,amount:Number(s.amount),card:Number(t?.card_amount||0),cash:Number(t?.cash_amount||0),other:Number(t?.other_amount||0),fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementConsistent:!t||Number(t.card_amount)+Number(t.cash_amount)+Number(t.other_amount)===Number(s.amount),note:s.memo||'',source:s.payment_method_name||'매출 장부'};}),
    expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:e.vendor?e.memo||'':''})),
-   products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=br.filter(b=>String(b.product_id)===String(p.id)).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:docs.data.find(d=>d.supplier&&d.items.some(i=>String(i?.productId)===String(p.id)))?.supplier||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
+   products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=br.filter(b=>String(b.product_id)===String(p.id)).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,imageUrl:productImages.get(String(p.id))||'',category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:docs.data.find(d=>d.supplier&&d.items.some(i=>String(i?.productId)===String(p.id)))?.supplier||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
    events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(d),time=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'}).format(d);return{id:e.id,date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||allocations.some(a=>a.event_id===e.id&&a.match_source==='auto')};}),
    links:allocations.map(a=>({id:a.event_id+'|'+a.sale_date,saleId:'s-'+a.sale_date,eventId:a.event_id,amount:Number(a.amount),method:a.match_source==='auto'?'자동':'수동'})),
    payerRules:(bank.aliases||[]).map(a=>({id:a.id,payer:a.payer,business:a.business,label:a.label,active:a.active})),
    receipts:docs.data.filter(d=>d.document_type==='receipt').reverse().map(d=>({id:d.id,date:d.purchase_date,supplier:d.supplier,total:Number(d.total),itemSubtotal:Number(d.item_subtotal),adjustment:Number(d.total)-Number(d.item_subtotal),items:d.items,imageData:d.image_data,rawText:d.raw_text,imageFingerprint:d.fingerprint,expenseId:d.expense_id})),
-   connection:{bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
+   connection:{imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
   };
  }
  async function invoke(command,payload){
@@ -287,7 +318,8 @@ function settlementCard(s){const got=linked(s),rem=remaining(s),stat=saleStatus(
 function renderBank(){const settlements=activeSettlements(),due=settlements.filter(s=>s.due<=TODAY),pending=settlements.filter(s=>remaining(s)),totalExpected=sum(settlements,expected),got=sum(settlements,linked),need=sum(due,remaining);const filtered=settlements.filter(s=>view.bankFilter==='all'||(view.bankFilter==='pending'?remaining(s)>0:remaining(s)===0));const events=db.events.filter(e=>e.date.startsWith(view.date.slice(0,7))).filter(e=>view.bankBusiness==='all'||e.business===view.bankBusiness).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
  return heading('SETTLEMENT','입금 확인','카드매출과 실제 통장 입금을 나란히 비교하세요.',`<button class="secondary compact" data-action="bank-settings">${icon('settings')}연결 설정</button>`)+`<div class="page-toolbar"><div class="segmented"><button class="${view.bankTab==='compare'?'active':''}" data-action="bank-tab" data-value="compare">카드정산 확인</button><button class="${view.bankTab==='transactions'?'active':''}" data-action="bank-tab" data-value="transactions">통장내역</button></div><span class="pill">${view.date.slice(0,7).replace('-','.')} 기준</span></div>${view.bankTab==='compare'?`<div class="summary-grid"><div class="summary-card overview"><small>카드 입금 예정</small><strong>${moneyMarkup(totalExpected)}</strong><em>수수료 차감 후</em></div><div class="summary-card overview"><small>입금 연결 완료</small><strong class="positive">${moneyMarkup(got)}</strong><em>${settlements.filter(s=>!remaining(s)).length}건 정산 완료</em></div><div class="summary-card overview"><small>지금 확인할 금액</small><strong class="negative">${moneyMarkup(need)}</strong><em>예정일 도래 기준</em></div></div><div class="bank-layout"><div class="stack"><div class="soft-notice">${icon('info')}<span>매출일과 입금일이 달라도 연결할 수 있어요. 입금은 장부 매출에 중복 합산하지 않습니다.</span></div><div class="page-toolbar" style="margin:0"><div class="product-filters">${[['all','전체'],['pending','미완료'],['done','완료']].map(([id,l])=>`<button class="chip ${view.bankFilter===id?'active':''}" data-action="bank-filter" data-value="${id}">${l}</button>`).join('')}</div><button class="text-button accent" data-action="auto-match">${icon('spark')}자동 연결 체험</button></div>${filtered.map(settlementCard).join('')||`<div class="card">${emptyHTML('확인할 정산이 없어요','다른 상태를 선택해 보세요.')}</div>`}</div><div class="stack bank-side"><section class="card"><div class="card-header"><h2>입금 확인 순서</h2>${icon('link')}</div><div class="bank-timeline"><div class="timeline-step"><strong>1. 일매출 입력</strong><p>매출을 카드·현금으로 구분합니다.</p></div><div class="timeline-step"><strong>2. 수수료·예정일 확인</strong><p>입금 예정액을 실제 정산표와 맞춥니다.</p></div><div class="timeline-step"><strong>3. 통장 입금 연결</strong><p>일치하는 입금을 선택하면 완료됩니다.</p></div></div></section><section class="card"><h3>체험용 통장내역</h3><p class="section-note">이 목업에서는 예시 입금을 추가하고 분류·연결 과정을 직접 체험할 수 있습니다.</p><button class="secondary compact full spacer" data-action="sample-bank">${icon('plus')}예시 입금 추가</button></section></div></div>`:`<div class="soft-notice neutral" style="margin-bottom:18px">${icon('info')}<span>예시 우리은행 통장 · 미미네와 하루온종일의 입금을 사업별로 구분합니다.</span></div><div class="page-toolbar"><div class="product-filters">${[['all','전체'],['mimine','미미네'],['adw','하루온종일'],['unclassified','미분류']].map(([id,l])=>`<button class="chip ${view.bankBusiness===id?'active':''}" data-action="business-filter" data-value="${id}">${l}</button>`).join('')}</div><button class="text-button accent" data-action="sample-bank">${icon('plus')}예시 입금 추가</button></div><div class="list-card">${events.map(e=>`<div class="bank-entry"><div class="bank-entry-top"><strong>${esc(e.payer)}</strong><span class="money">+${won(e.amount)}</span></div><div class="bank-entry-meta"><span>${e.date.slice(5).replace('-','.')} ${e.time} · 우리은행</span><span>${available(e)<e.amount?'연결 '+won(e.amount-available(e)):'연결 전'}</span></div><div class="bank-entry-actions"><span class="pill ${e.business==='mimine'?'green':e.business==='unclassified'?'amber':''}">${{mimine:'미미네',adw:'하루온종일',unclassified:'미분류',other:'기타'}[e.business]}</span><button class="text-button" data-action="classify" data-id="${e.id}">분류 변경${icon('right')}</button>${available(e)===0?'<span class="pill green">연결 완료</span>':''}</div></div>`).join('')||emptyHTML('입금내역이 없어요','예시 입금을 추가해 체험해 보세요.')}</div>`}<p class="section-note">예시 데이터로 동작합니다. 실제 은행·POS 연동 상태를 나타내는 화면이 아닙니다.</p>`;
 }
-function productVisual(p){return`<div class="product-visual" style="--product-color:${p.color||'#58785f'};--product-bg:${p.bg||'#e9f0e3'}">${icon(p.category==='음료'?'drink':'ramen')}</div>`;}
+function productVisual(p){let image='';try{const url=new URL(p.imageUrl);if(['https:','http:'].includes(url.protocol)&&!url.username&&!url.password)image=url.href;}catch{}return`<div class="product-visual" style="--product-color:${p.color||'#58785f'};--product-bg:${p.bg||'#e9f0e3'}">${icon(p.category==='음료'?'drink':'ramen')}${image?`<img class="product-image" src="${esc(image)}" alt="${esc(p.name)} 상품 사진" loading="lazy" decoding="async" draggable="false">`:''}</div>`;}
+document.addEventListener('error',event=>{if(event.target?.matches?.('img.product-image'))event.target.remove();},true);
 function renderProducts(){let ps=db.products.filter(p=>view.productFilter==='low'?stock(p)<=p.min:view.productFilter==='expiry'?expiring(p):true).filter(p=>p.name.toLowerCase().includes(view.productQuery.toLowerCase()));return`<div class="product-page">${heading('PRODUCTS & STOCK','상품·재고','입고 기록과 유통기한을 한 화면에서 관리하세요.',`<button class="secondary compact" data-action="product-new">${icon('plus')}상품 등록</button>`)}<div class="product-toolbar"><div class="product-filters">${[['all','전체',db.products.length],['low','재고 부족',db.products.filter(p=>stock(p)<=p.min).length],['expiry','유통기한 임박',db.products.filter(expiring).length]].map(([id,l,n])=>`<button class="chip ${view.productFilter===id?'active':''}" data-action="product-filter" data-value="${id}">${l}<span>${n}</span></button>`).join('')}</div><label class="search-box">${icon('search')}<input data-search="products" placeholder="상품명 검색" aria-label="상품 검색" value="${esc(view.productQuery)}"></label></div><div class="product-grid">${ps.map(p=>{const qty=stock(p),e=expiry(p),days=e?daysBetween(TODAY,e):null;return`<button class="product-card" data-action="product-detail" data-id="${p.id}">${productVisual(p)}${qty<=p.min?'<span class="pill red">재고 부족</span>':expiring(p)?`<span class="pill amber">${days<0?'기한 지남':'D−'+days}</span>`:''}<h3>${esc(p.name)}</h3><span class="category">${esc(p.category)} · 판매가 ${won(p.price)}</span><div class="product-stock"><strong class="${qty<=p.min?'negative':''}">${fmt(qty)}<span>개</span></strong><small>기준 ${p.min}개</small></div><div class="product-foot ${expiring(p)?'attention':''}">${e?'유통기한 '+e.replaceAll('-','.'):'유통기한 미등록'}</div></button>`;}).join('')||emptyHTML('조건에 맞는 상품이 없어요','다른 필터나 검색어로 확인하세요.')}</div><p class="section-note">재고는 입고·조정 기록 기준입니다. 상품을 누르면 입고, 재고 조정, 상품 수정을 할 수 있어요.</p></div>`;}
 function renderReports(){const bounds=view.reportRange==='year'?[TODAY.slice(0,4)+'-01-01',TODAY]:[view.date.slice(0,7)+'-01',view.date.slice(0,7)+'-31'];const sales=db.sales.filter(s=>inRange(s,bounds)),expenses=db.expenses.filter(e=>inRange(e,bounds));const ts=sum(sales),te=sum(expenses);const cats={};expenses.forEach(e=>cats[e.category]=(cats[e.category]||0)+e.amount);const catsArr=Object.entries(cats).sort((a,b)=>b[1]-a[1]);const days=view.reportRange==='year'?daysBetween('2026-01-01',TODAY)+1:Number(view.date.slice(8));const avg=Math.round(ts/days);const monthDays=new Date(Date.UTC(2026,Number(view.date.slice(5,7)),0)).getUTCDate();const week=Array.from({length:7},(_,i)=>addDays(view.date,i-6));return heading('INSIGHTS','매출 분석','숫자는 간결하게, 필요한 흐름은 분명하게.',`<button class="secondary compact" data-action="export">${icon('download')}장부 내보내기</button>`)+`<div class="page-toolbar"><div class="segmented"><button class="${view.reportRange==='month'?'active':''}" data-action="report-range" data-value="month">이번 달</button><button class="${view.reportRange==='year'?'active':''}" data-action="report-range" data-value="year">올해</button></div><span class="pill">${bounds[0].replaceAll('-','.')}부터</span></div><div class="summary-grid"><div class="summary-card"><small>총매출</small><strong class="positive">${moneyMarkup(ts)}</strong><em>${sales.length}일 기록</em></div><div class="summary-card"><small>총지출</small><strong>${moneyMarkup(te)}</strong><em>${expenses.length}건 기록</em></div><div class="summary-card"><small>매출 − 지출</small><strong class="${ts-te<0?'negative':'positive'}">${moneyMarkup(ts-te)}</strong><em>입력된 장부 기준</em></div></div><div class="report-grid"><div class="stack"><section class="card"><div class="card-header"><h2>최근 7일의 흐름</h2><span class="chart-legend"><i></i> 매출</span></div>${chart(week,'report-chart')}<div class="chart-note"><span>선택 기간 하루 평균</span><strong>${won(avg)}</strong></div></section><section class="card"><div class="card-header"><h2>날짜별 비교</h2><small>최근 7일</small></div><table class="report-table"><thead><tr><th>날짜</th><th>매출</th><th>지출</th><th>매출 − 지출</th></tr></thead><tbody>${week.slice().reverse().map(d=>{const s=saleOn(d)?.amount||0,e=sum(db.expenses.filter(e=>e.date===d));return`<tr><td>${md(d)} ${weekday(d)}</td><td>${fmt(s)}</td><td>${fmt(e)}</td><td class="${s-e<0?'negative':''}">${fmt(s-e)}</td></tr>`;}).join('')}</tbody></table><p class="section-note">단위: 원</p></section></div><div class="stack"><section class="card"><div class="card-header"><h2>어디에 지출했나요?</h2><small>항목별 비중</small></div><div class="expense-breakdown">${catsArr.map(([c,n],i)=>`<div><div class="breakdown-head"><strong>${esc(c)}</strong><span>${won(n)} · ${Math.round(n/Math.max(te,1)*100)}%</span></div><div class="breakdown-track"><div class="breakdown-bar" style="width:${n/Math.max(te,1)*100}%;background:${['#d07b64','#a8b492','#c5b58e','#a8bec0','#b9a1b2'][i%5]}"></div></div></div>`).join('')||'<p class="muted">지출 기록이 없어요.</p>'}</div></section><section class="card goal-panel"><div class="card-header"><h2>${view.reportRange==='year'?'하루 평균 매출':'이달 말 예상 매출'}</h2><span class="pill">단순 추정</span></div><div class="goal-value">${won(view.reportRange==='year'?avg:Math.round(ts/days*monthDays))}</div><p>${view.reportRange==='year'?'올해 누적 매출 ÷ 올해 경과 일수':'누적 매출 ÷ 경과 일수 × 이달 전체 일수'}<br>요일·휴점·행사에 따른 차이는 반영하지 않습니다.</p></section></div></div>`;}
 function render(){document.body.classList.toggle('large-type',!!db.settings.largeType);navHTML();$('#main').innerHTML=({today:renderToday,ledger:renderLedger,bank:renderBank,products:renderProducts,reports:renderReports}[view.page]||renderToday)();document.title='미미네 · '+({today:'매출·비용 흐름',ledger:'장부',bank:'입금 확인',products:'상품·재고',reports:'비교·예측'}[view.page]);}
@@ -520,6 +552,7 @@ const productionRender=render;
 render=function(){
  productionRender();
  const c=db.connection||{},messages=[];
+ if(c.imageError)messages.push('상품 사진을 불러오지 못했어요. 기본 아이콘으로 표시합니다. '+c.imageError);
  if(c.stockError)messages.push('영수증 저장 서버 준비가 필요합니다. '+c.stockError);
  if(c.truncated)messages.push('입금 조회 한도를 초과해 일부 내역만 불러왔습니다. 합계를 확정값으로 사용하지 마세요.');
  if(messages.length)$('#main').insertAdjacentHTML('afterbegin',`<div class="production-notice" role="status">${messages.map(esc).join('<br>')}</div>`);
@@ -612,6 +645,48 @@ window.MimineFlowRefresh=()=>refreshProduction(true);
 setInterval(()=>{if(!document.hidden&&!modalName)void refreshProduction(true);},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!modalName)void refreshProduction(true);});
 render();
+
+/* Touch navigation follows the five visible bottom tabs. */
+function installMimineSwipe({root,getPage,navigateTo,isBlocked,isEnabled,now=Date.now}){
+ const pages=['today','ledger','reports','bank','products'];
+ let gesture=null,suppressClickUntil=0;
+ const mainTarget=target=>target?.closest?.('#main');
+ function eligible(target){
+  if(!mainTarget(target)||target.closest('[data-swipe-ignore],.daily-line-svg,.sheet,.modal-overlay,input,textarea,select,[contenteditable],a'))return false;
+  const button=target.closest('button');
+  return !button||button.matches('.product-card,.record-row,[data-action="entry"],[data-action="day-detail"]');
+ }
+ root.addEventListener('touchstart',event=>{
+  gesture=null;
+  if(event.touches.length!==1||!isEnabled()||isBlocked()||!eligible(event.target))return;
+  const t=event.touches[0];gesture={x:t.clientX,y:t.clientY,time:now(),page:getPage(),horizontal:false};
+ },{passive:true});
+ root.addEventListener('touchmove',event=>{
+  if(!gesture)return;
+  if(event.touches.length!==1||isBlocked()){gesture=null;return;}
+  const t=event.touches[0],dx=Math.abs(t.clientX-gesture.x),dy=Math.abs(t.clientY-gesture.y);
+  if(dy>12&&dy>dx){gesture=null;return;}
+  if(dx>12&&dx>dy*1.4){gesture.horizontal=true;if(event.cancelable)event.preventDefault();}
+ },{passive:false});
+ root.addEventListener('touchend',event=>{
+  const g=gesture;gesture=null;if(!g||event.touches?.length||isBlocked()||!isEnabled()||g.page!==getPage())return;
+  const t=event.changedTouches?.[0];if(!t)return;
+  const dx=t.clientX-g.x,dy=t.clientY-g.y,index=pages.indexOf(g.page);
+  if(index<0||Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy)*1.4||now()-g.time>1000)return;
+  if(event.cancelable)event.preventDefault();suppressClickUntil=now()+350;
+  navigateTo(pages[(index+(dx<0?1:-1)+pages.length)%pages.length]);
+ },{passive:false});
+ root.addEventListener('touchcancel',()=>{gesture=null;},{passive:true});
+ // A swipe that began on a product must not also open the product on release.
+ root.addEventListener('click',event=>{
+  if(event.detail!==0&&now()<suppressClickUntil&&mainTarget(event.target)){
+   event.preventDefault();event.stopImmediatePropagation();
+  }
+ },true);
+}
+installMimineSwipe({root:document,getPage:()=>view.page,navigateTo:page=>navigate(page),
+ isBlocked:()=>!!modalName||productionBusy,
+ isEnabled:()=>window.matchMedia('(max-width:760px)').matches});
 
 })();</script>
 </body>

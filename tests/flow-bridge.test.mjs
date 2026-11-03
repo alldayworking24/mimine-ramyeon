@@ -5,12 +5,13 @@ const tables={
  sales:[{id:5,sale_date:'2026-11-03',amount:100000,memo:'매출'}],
  expenses:[{id:9,expense_date:'2026-11-03',amount:5000,category:'소모품',vendor:'구매처',memo:'메모'}],
  products:[{id:7,name:'상품',category:'기타',category_id:2,sku:'12345',sale_price:4200,purchase_price:810,low_stock_threshold:5}],
+ product_images:[{id:1,product_id:7,public_url:'https://example.test/other.png',is_primary:false,sort_order:0},{id:3,product_id:7,public_url:'https://example.test/primary-later.png',is_primary:true,sort_order:2},{id:2,product_id:7,public_url:'https://example.test/primary.png',is_primary:true,sort_order:0}],
  product_categories:[{id:2,name:'라면'}],
  product_purchase_batches:[{id:10,product_id:7,purchase_date:'2026-11-03',remaining_quantity:3,quantity:5,unit_cost:810,sale_price:4000,expiration_date:'2027-01-01'}],
  mimine_stock_documents:[]
 };
-const calls=[];let bankFailure=false;
-function query(table){const q={select(){return q},order(){return q},range(){return q},abortSignal(){return q},eq(){return q},upsert(data){calls.push({table,data});return q},delete(){calls.push({delete:table});return q},then(resolve){return Promise.resolve({data:tables[table]||[],error:null}).then(resolve)}};return q;}
+const calls=[];let bankFailure=false,imageFailure=false;
+function query(table){const q={select(){return q},order(){return q},range(){return q},abortSignal(){return q},eq(){return q},upsert(data){calls.push({table,data});return q},delete(){calls.push({delete:table});return q},then(resolve){return Promise.resolve({data:imageFailure&&table==='product_images'?null:tables[table]||[],error:imageFailure&&table==='product_images'?{message:'사진 조회 오류'}:null}).then(resolve)}};return q;}
 const appView={classList:{contains:()=>true}};
 const context={console,Intl,Date,Map,Number,JSON,String,Promise,AbortSignal,URLSearchParams,localStorage:{getItem:()=>null},location:{hash:''},window:{},document:{getElementById:id=>id==='appView'?appView:null,body:{classList:{remove(){}}},head:{append(){}},createElement:()=>({})},MutationObserver:class{observe(){}},db:{auth:{getSession:async()=>({data:{session:{access_token:'test'}}}),onAuthStateChange(){}},from:query,rpc:async(name,args)=>{calls.push({name,args});return{data:{ok:true},error:null}}},bankApi:async payload=>{
  if(bankFailure)throw new Error('은행 서버 오류');
@@ -21,7 +22,7 @@ vm.createContext(context);vm.runInContext(await readFile(new URL('../flow/data-c
 const bridge=vm.runInContext('createMimineProductionBridge(db,{bankRequest:bankApi})',context),snapshot=await bridge.snapshot();
 assert.equal(snapshot.sales[0].amount,100000);assert.equal(snapshot.sales[0].card,90000);assert.equal(snapshot.sales[0].settlementKnown,true);
 assert.equal(snapshot.expenses[0].vendor,'구매처');assert.equal(snapshot.expenses[0].note,'메모');
-assert.equal(snapshot.products[0].category,'라면');assert.equal(snapshot.products[0].lastSalePrice,4200);assert.equal(snapshot.products[0].batches[0].qty,3);
+assert.equal(snapshot.products[0].imageUrl,'https://example.test/primary.png');assert.equal(snapshot.products[0].category,'라면');assert.equal(snapshot.products[0].lastSalePrice,4200);assert.equal(snapshot.products[0].batches[0].qty,3);
 assert.equal(snapshot.events[0].date,'2026-11-03');assert.equal(snapshot.events[0].time,'10:00');assert.equal(snapshot.events[0].autoRegistered,true);
 await bridge.invoke('stock',{requestId:'request',document:{type:'inbound',items:[]}});assert.equal(calls.at(-1).name,'mimine_receive_stock');
 await bridge.invoke('expense',{requestId:'request2',date:'2026-11-03',amount:1000,vendor:'테스트'});assert.equal(calls.at(-1).name,'mimine_save_expense');
@@ -30,3 +31,7 @@ const result=await bridge.invoke('sale',{date:'2026-11-03',amount:200000,note:'�
 assert.match(result.warning,/매출은 저장/);assert.equal(calls.at(-1).table,'sales');assert.equal(calls.at(-1).data.amount,200000);
 const missingBank=await bridge.snapshot();assert.match(missingBank.connection.bankError,/은행 서버 오류/);
 console.log('Production bridge: real-schema mapping, KST, last sale price, RPC routing, bank failures and partial-sale warning passed.');
+
+imageFailure=true;const imageError=await bridge.snapshot();
+assert.match(imageError.connection.imageError,/사진 조회 오류/);assert.equal(imageError.products[0].imageUrl,'');assert.equal(imageError.sales[0].amount,100000);
+console.log('Product images: primary/sort priority and independent image failure handling passed.');

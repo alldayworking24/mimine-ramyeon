@@ -30,3 +30,31 @@ body{background:#f4f6fa}.topbar{height:63px;background:#ffffffec;padding:0 26px}
 
 /* The canonical index owns both the new login and the new workspace. */
 .auth-view{display:none;min-height:100dvh;padding:28px 18px;align-items:center;justify-content:center;background:#f7f8fb}.auth-loading .auth-view{display:flex}.auth-loading .app-shell,.auth-loading #mobile-nav,.auth-loading #modal-root,.auth-loading .skip{display:none}.auth-card{width:100%;max-width:410px;padding:26px;border-radius:22px;border:1px solid #e2e6ec;background:white;box-shadow:0 12px 44px #1f334509}.auth-brand{display:flex;gap:12px;align-items:center;margin-bottom:26px}.auth-brand img{width:48px;height:48px;object-fit:contain}.auth-brand strong{font-size:24px;color:#182434;display:block}.auth-brand span{display:block;color:#768291;font-size:12px;margin-top:4px}.auth-card h1{font-size:23px;margin-bottom:10px}.auth-card>p{font-size:13px;color:#748090;line-height:1.6}.auth-card label{display:block;font-size:13px;color:#465368;margin-top:16px}.auth-card input{display:block;min-width:0;width:100%;height:46px;margin-top:7px;border:1px solid #d8dfe8;border-radius:10px;padding:10px 12px;font:inherit;color:#203149}.auth-card form .primary{margin-top:22px}.auth-card #auth-message{min-height:22px;color:#a44737;font-size:12px;overflow-wrap:anywhere}.auth-account-link{display:block;margin-top:18px;text-align:center;font-size:12px;color:#6c788a}.local-preview-note{padding:7px 14px;background:#fff3d8;border-bottom:1px solid #eddbb8;color:#755a28;font-size:11px;text-align:center;line-height:1.6}.local-preview-note[hidden]{display:none}.local-preview-note button{border:0;background:transparent;color:#2363ca;text-decoration:underline;margin-left:6px;font:inherit;cursor:pointer}@media(max-width:480px){.auth-card{padding:22px}.auth-card h1{font-size:22px}}
+
+/* Contain the viewport and let narrow content shrink inside it. */
+html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x:none}
+.app-shell,.workspace,#main,.product-page,.page-heading>div,.product-toolbar,.search-line,.bank-layout,.report-grid,.sheet,.sheet-body{min-width:0;max-width:100%}
+#main{touch-action:pan-y pinch-zoom}
+.search-box input{min-width:0;width:0;flex:1}
+.search-box svg{flex-shrink:0}
+.product-filters,.deposit-presets{flex-wrap:wrap}
+.supply-quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.supply-quick-actions button{min-width:0;overflow-wrap:anywhere}
+.product-grid,.form-grid{min-width:0}
+.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.product-card,.product-card>*{min-width:0;max-width:100%}
+.product-stock{flex-wrap:wrap;gap:4px}
+.product-foot,.sheet-product-hero h3,.sheet-product-hero>div,.field-note{overflow-wrap:anywhere}
+.sheet-product-hero>div{min-width:0}
+.sheet-body input,.sheet-body select,.sheet-body textarea{min-width:0;max-width:100%}
+.product-visual{position:relative;flex-shrink:0;overflow:hidden}
+.product-visual .product-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;background:var(--product-bg,#f6e9e3)}
+@media(max-width:760px){
+ #main table{table-layout:fixed;width:100%;max-width:100%}
+ #main th,#main td{white-space:normal;overflow-wrap:anywhere}
+ .flow-presets,.period-presets,.range-buttons,.segmented{min-width:0;max-width:100%;flex-wrap:wrap}
+ .page-heading{gap:8px}.page-heading>button{flex-shrink:0}
+ .receipt-review-summary{flex-wrap:wrap}
+ .product-cost-prices>span{min-width:0;gap:3px}
+ .product-cost-prices b{overflow-wrap:anywhere;white-space:normal}
+}

@@ -36,6 +36,7 @@ const productionRender=render;
 render=function(){
  productionRender();
  const c=db.connection||{},messages=[];
+ if(c.imageError)messages.push('상품 사진을 불러오지 못했어요. 기본 아이콘으로 표시합니다. '+c.imageError);
  if(c.stockError)messages.push('영수증 저장 서버 준비가 필요합니다. '+c.stockError);
  if(c.truncated)messages.push('입금 조회 한도를 초과해 일부 내역만 불러왔습니다. 합계를 확정값으로 사용하지 마세요.');
  if(messages.length)$('#main').insertAdjacentHTML('afterbegin',`<div class="production-notice" role="status">${messages.map(esc).join('<br>')}</div>`);

@@ -4,7 +4,7 @@
   "version": "2026.11.3-unpublished",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node tests/finance.test.cjs && node tests/bank-handler.test.mjs && node tests/auto-match-sql.test.mjs && node tests/flow-stock.test.mjs && node tests/flow-bank.test.mjs && node tests/flow-bridge.test.mjs && node tests/root-entry.test.mjs && node tests/refresh-interaction.test.mjs",
+    "test": "node tests/finance.test.cjs && node tests/bank-handler.test.mjs && node tests/auto-match-sql.test.mjs && node tests/flow-stock.test.mjs && node tests/flow-bank.test.mjs && node tests/flow-bridge.test.mjs && node tests/root-entry.test.mjs && node tests/refresh-interaction.test.mjs && node tests/mobile-navigation.test.mjs",
     "preview": "node build.mjs --preview && node preview-server.mjs"
   },
   "devDependencies": {
