@@ -18,6 +18,7 @@ assert.match(table,/change-flat"><strong>0/);
 const chart=vm.runInContext('flowChart()',c);
 assert.match(chart,/data-series="sales"[^>]*stroke="#228461"/);
 assert.match(chart,/data-series="previous"[^>]*stroke="#858e9c"/);
+assert.doesNotMatch(chart.match(/<path data-series="previous"[^>]*>/)[0],/stroke-dasharray/);
 assert.match(chart,/data-tone="increase"[^>]*stroke="#2463d6"/);
 assert.match(chart,/data-tone="decrease"[^>]*stroke="#dc4a4e"/);
 assert.equal(vm.runInContext('changeTone(null)',c),'change-flat');
