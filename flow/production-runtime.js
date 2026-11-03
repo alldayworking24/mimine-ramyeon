@@ -1,5 +1,5 @@
 /* This adapter replaces every prototype write with an authenticated server operation. */
-let productionBusy=false,productionClosing=false;
+let productionBusy=false,productionClosing=false,productionRefreshing=false,productionRevision=0;
 const productionBridge=window.MimineBridge;
 function productionCategories(){return[...new Set(['라면','컵라면','음료','토핑','기타',...db.products.map(p=>p.category)])];}
 function requestId(){if(crypto.randomUUID)return crypto.randomUUID();const b=crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
@@ -11,15 +11,15 @@ const productionClose=closeModal;
 closeModal=function(){if(productionBusy&&!productionClosing)return;return productionClose();};
 function applyProductionSnapshot(next){db=next;render();}
 async function refreshProduction(silent=false){
- if(productionBusy||modalName)return;
- productionBusy=true;
- try{applyProductionSnapshot(await productionBridge.snapshot());if(!silent)toast('최신 내역을 불러왔어요.');}
+ if(productionBusy||productionRefreshing||modalName)return;
+ productionRefreshing=true;const revision=productionRevision;
+ try{const next=await productionBridge.snapshot();if(revision!==productionRevision||productionBusy||modalName)return;applyProductionSnapshot(next);if(!silent)toast('최신 내역을 불러왔어요.');}
  catch(error){toast('불러오기 실패: '+error.message);}
- finally{productionBusy=false;}
+ finally{productionRefreshing=false;}
 }
 async function productionWrite(command,payload,message,after){
  if(productionBusy)return false;
- productionBusy=true;const buttons=$$('.sheet button');buttons.forEach(b=>b.disabled=true);
+ productionBusy=true;productionRevision++;const buttons=$$('.sheet button');buttons.forEach(b=>b.disabled=true);
  try{
   const result=await productionBridge.invoke(command,payload);
   let next;

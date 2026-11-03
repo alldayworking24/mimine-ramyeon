@@ -1,7 +1,6 @@
 /* Main-page server provider; uses the existing Mimine session and schema. */
 function createMimineProductionBridge(db,{bankRequest}={}){
  const launch=new URLSearchParams(location.hash.slice(1)).get('allbase')||'';
- let refreshing=null;
  const kst=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
  const check=async()=>{const{data,error}=await db.auth.getSession();if(error)throw error;if(!data?.session)throw new Error('로그인이 필요합니다.');return data.session;};
  async function rows(table,order='id'){
@@ -75,7 +74,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   const r=await fetch('/.netlify/functions/mimine-bank',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
   const data=await r.json();if(!r.ok)throw new Error(data.error||'통장 연결에 실패했습니다.');return data;
  }
- return {launch,isDemo:false,today:kst,snapshot:()=>refreshing||(refreshing=snapshot().finally(()=>refreshing=null)),invoke,
+ return {launch,isDemo:false,today:kst,snapshot,invoke,
  legacy:(panel='more')=>{const url=new URL('legacy/index.html',location.href);url.hash='panel='+encodeURIComponent(panel);location.assign(url.href);},
  logout:async()=>{const{error}=await db.auth.signOut();if(error)throw new Error(error.message);location.replace(new URL('index.html',location.href).href);}};
 }
