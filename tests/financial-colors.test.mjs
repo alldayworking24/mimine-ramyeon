@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
+const c={console,Date,Intl,Map,URL,URLSearchParams,structuredClone,productionToday:'2026-11-03',location:{hash:'',href:'https://example.test/'},localStorage:{getItem:()=>null},window:{},document:{addEventListener(){}}};
+vm.createContext(c);
+vm.runInContext(await read('flow/preview-provider.js'),c);
+c.productionSnapshot=await vm.runInContext('createMiminePreviewProvider().snapshot()',c);
+const app=await read('flow/app.js');vm.runInContext(app.slice(0,app.indexOf("document.addEventListener('click'")),c);
+const analytics=await read('flow/analytics.js');vm.runInContext(analytics.slice(0,analytics.indexOf('renderToday=()=>')),c);
+const interactions=await read('flow/interactions.js');vm.runInContext(interactions.slice(0,interactions.indexOf('const bankBeforeExclusion=')),c);
+vm.runInContext("flow.start='2026-11-01';flow.end='2026-11-03';for(const[d,a,p]of[['2026-11-03',1600,48300],['2026-11-02',47500,42700],['2026-11-01',55600,55600]]){db.sales.find(s=>s.date===d).amount=a;db.sales.find(s=>s.date===shiftedYear(d)).amount=p;}",c);
+const table=vm.runInContext('dailyTable()',c);
+assert.match(table,/<th class="metric-previous">작년 매출<\/th><th class="metric-sales">일매출<\/th>/);
+assert.match(table,/<td class="metric-previous previous-money">48,300<\/td><td class="metric-sales">1,600<\/td><td class="metric-balance change-down"><strong>-46,700/);
+assert.match(table,/change-up"><strong>\+4,800/);
+assert.match(table,/change-flat"><strong>0/);
+const chart=vm.runInContext('flowChart()',c);
+assert.match(chart,/data-series="sales"[^>]*stroke="#228461"/);
+assert.match(chart,/data-series="previous"[^>]*stroke="#858e9c"/);
+assert.match(chart,/data-tone="increase"[^>]*stroke="#2463d6"/);
+assert.match(chart,/data-tone="decrease"[^>]*stroke="#dc4a4e"/);
+assert.equal(vm.runInContext('changeTone(null)',c),'change-flat');
+vm.runInContext("db.sales=db.sales.filter(s=>s.date!=='2025-11-03')",c);
+assert.match(vm.runInContext('dailyTable()',c),/previous-money">미입력<\/td><td class="metric-sales">1,600<\/td><td class="metric-balance change-flat">/);
+for(const[last,tone]of [[1,'change-up'],[99999999,'change-down']]){
+ vm.runInContext('forecastValues=()=>({enough:true,priorComplete:true,total:200,current:100,rest:100,last:'+last+',future:[1],monthMissing:0})',c);
+ assert.match(vm.runInContext('forecastPanel()',c),new RegExp('metric-balance '+tone));
+}
+console.log('Financial colors: past/current order, positive/negative/zero/missing changes, curve series and forecast comparison passed.');

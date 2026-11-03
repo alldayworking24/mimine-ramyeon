@@ -39,3 +39,27 @@ function installMimineSwipe({root,getPage,navigateTo,isBlocked,isEnabled,now=Dat
 installMimineSwipe({root:document,getPage:()=>view.page,navigateTo:page=>navigate(page),
  isBlocked:()=>!!modalName||productionBusy,
  isEnabled:()=>window.matchMedia('(max-width:760px)').matches});
+
+/* Keep tabs inside the visible screen when mobile browser controls resize it. */
+function installMimineNavViewport({win,doc}){
+ const viewport=win.visualViewport;if(!viewport)return;
+ const nav=doc.getElementById('mobile-nav');if(!nav)return;
+ let inset=0,scheduled=false;
+ function update(){
+  scheduled=false;
+  const editing=doc.activeElement?.matches('input,textarea,select,[contenteditable="true"]');
+  const mobile=win.matchMedia('(max-width:760px)').matches;
+  // Do not float the menu over the keyboard or a pinch-zoomed page.
+  const next=!mobile||editing||Math.abs(viewport.scale-1)>.02?0:
+   Math.max(0,Math.round(nav.getBoundingClientRect().bottom+inset-viewport.offsetTop-viewport.height));
+  if(next!==inset){inset=next;doc.documentElement.style.setProperty('--mobile-nav-inset',`${inset}px`);}
+ }
+ function schedule(){if(!scheduled){scheduled=true;win.requestAnimationFrame(update);}}
+ viewport.addEventListener('resize',schedule,{passive:true});
+ viewport.addEventListener('scroll',schedule,{passive:true});
+ win.addEventListener('resize',schedule,{passive:true});
+ doc.addEventListener('focusin',schedule);
+ doc.addEventListener('focusout',schedule);
+ schedule();
+}
+installMimineNavViewport({win:window,doc:document});
