@@ -87,3 +87,7 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
  .toast{bottom:calc(var(--mobile-nav-height) + var(--mobile-nav-inset) + 12px)}
  .large-type .bottom-nav button span{font-size:13px}
 }
+
+/* Full period windows distinguish future dates from zero sales. */
+.flow-window-note{font-size:10px;line-height:1.65;color:#68778a;background:#f3f5f8;border-radius:8px;padding:7px 9px;margin:8px 0;overflow-wrap:anywhere}
+.chart-axis-date.is-today{color:var(--sales);font-weight:800;background:#edf7f2}
