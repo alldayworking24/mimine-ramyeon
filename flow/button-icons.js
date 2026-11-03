@@ -63,6 +63,7 @@ function buttonIconSpec({action='',value='',text='',type='',className='',formId=
  if(action==='entry')return{icon:'plus',label:/지출|비용/.test(text)?'비용 등록':'매출 등록',variant:'inline'};
  if(action==='entry-type'||action==='ledger-type')return{icon:value==='all'?'list':value==='expense'?'expense':'sales',label:text,variant:'filter'};
  if(['flow-period','range','report-range','deposit-period'].includes(action))return{icon:periodIconName(value),label:text,variant:'period'};
+ if(action==='annual-metric')return{icon:value==='cost'?'expense':value==='balance'?'chart':'sales',label:text,variant:'filter'};
  if(action==='product-filter')return{icon:value==='low'?'alert':value==='expiry'?'clock':'box',label:text,variant:'filter'};
  if(action==='bank-tab')return{icon:value==='compare'?'card':'bank',label:text,variant:'inline'};
  if(['bank-filter','bank-scope'].includes(action))return{icon:'filter',label:text,variant:'filter'};

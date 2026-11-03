@@ -6,7 +6,7 @@ const assets=['layout-v2.js','layout-v2.css','allbase-connect.html','allbase-rou
 for(const file of assets)await copyFile(file,'dist/'+file);
 const providers=await Promise.all(['data-client.js','auth.js'].map(file=>readFile('flow/'+file,'utf8')));
 const previewProvider=await readFile('flow/preview-provider.js','utf8');
-const modules=['app.js','analytics.js','interactions.js','bank-automation.js','stock-receipts.js','production-runtime.js','button-icons.js','mobile-navigation.js'];
+const modules=['app.js','analytics.js','interactions.js','annual-reports.js','bank-automation.js','stock-receipts.js','production-runtime.js','button-icons.js','mobile-navigation.js'];
 const body=(await Promise.all(modules.map(file=>readFile('flow/'+file,'utf8')))).join('\n');
 function boot(mockup=false){
  const entry=mockup?`let parentBridge;try{if(parent!==window&&parent.location.origin===location.origin&&parent.MimineBridge?.isDemo)parentBridge=parent.MimineBridge;}catch{}bootBridge=parentBridge||createMiminePreviewProvider();`:'bootBridge=await createMimineAuthenticatedBridge();';
