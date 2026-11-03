@@ -11,15 +11,16 @@ vm.runInContext(interactions.slice(0,interactions.indexOf('const bankBeforeExclu
 const run=s=>vm.runInContext(s,c);
 run("view.date='2026-10-01';flow.start='2026-10-01';flow.end='2026-10-31'");
 for(const name of ['renderLedger','flowChart','comparePanel','forecastPanel','dailyTable'])assert.match(run(name+'()'),/data-action="today-sale"/,name+' revenue must open today');
+for(const name of ['renderLedger','flowChart','comparePanel'])assert.match(run(name+'()'),/data-action="today-expense"/,name+' costs must open today expense');
 assert.doesNotMatch(run('renderProducts()'),/data-action="today-sale"/,'Product selling prices must remain product controls');
 assert.doesNotMatch(run('renderBank()'),/class="deposit-total-grid"[\s\S]*data-action="today-sale"/,'Bank deposit totals must not become revenue');
 assert.match(run('dailyTable()'),/data-action="open-day" data-date="2026-10-31"/,'Dated details remain available');
 run('originalQuickEntry=openEntry');let opened;
-c.openEntry=(...args)=>{opened=args;};run("action({dataset:{action:'today-sale'}})");assert.deepEqual(opened,['sale','','2026-11-03']);assert.equal(run('view.date'),'2026-10-01','Opening today must not change the browsing filter');
+c.openEntry=(...args)=>{opened=args;};run("action({dataset:{action:'today-sale'}})");assert.deepEqual(opened,['sale','','2026-11-03']);run("action({dataset:{action:'today-expense'}})");assert.deepEqual(opened,['expense','','2026-11-03']);assert.equal(run('view.date'),'2026-10-01','Opening today must not change the browsing filter');
 c.openEntry=c.originalQuickEntry;
 let amountFocused=false,amountSelected=false,body,footer;
-const dateInput={addEventListener(){}};
-const nodes={'.sheet':{classList:{add(){}}},'.sale-entry-primary':{after(){}},'#form-error':{},'#entry-amount':{setAttribute(){},addEventListener(){},focus(){amountFocused=true;},select(){amountSelected=true;}},'#entry-form':{querySelector:()=>dateInput}};
+const dateInput={addEventListener(){}};let vendorFocused=false;const vendorInput={focus(){vendorFocused=true;}};
+const nodes={'.sheet':{classList:{add(){}}},'.sale-entry-primary':{after(){}},'#form-error':{},'#entry-amount':{setAttribute(){},addEventListener(){},focus(){amountFocused=true;},select(){amountSelected=true;}},'#entry-form':{querySelector:()=>dateInput},'#entry-form [name=vendor]':vendorInput};
 c.document.querySelector=s=>nodes[s]??null;c.sheet=(title,b,f)=>{body=b;footer=f;};
 run("openEntry('sale','','2026-11-03')");
 assert.match(body,/value="2026-11-03"/);assert.match(body,/value="161,130"/);assert.equal((body.match(/type="submit"/g)||[]).length,1);assert.doesNotMatch(footer,/type="submit"/);assert.match(body,/sale-entry-amount-row[\s\S]*sale-inline-save/);assert.ok(amountFocused&&amountSelected);
@@ -53,3 +54,9 @@ console.log('Quick sales: revenue shortcuts, today independent of filters, dated
  input.ownerDocument.activeElement=input;handlers.get('click')();input.isConnected=false;input.selectionStart=input.selectionEnd=1;flush();assert.deepEqual([input.selectionStart,input.selectionEnd],[1,1]);
  console.log('Sales replacement: focus/re-tap selects all, original value retained, immediate multi-digit replacement and blur/close guards passed.');
 }
+
+amountFocused=false;amountSelected=false;run("openEntry('expense','','2026-11-03')");
+assert.ok(body.indexOf('name="category"')<body.indexOf('name="vendor"')&&body.indexOf('name="vendor"')<body.indexOf('id="entry-amount"'),'Expense category and description precede amount');
+assert.match(body,/value="카드 대금"/);assert.equal((body.match(/type="submit"/g)||[]).length,1);assert.doesNotMatch(footer,/type="submit"/);assert.ok(vendorFocused&&!amountFocused,'New expense begins with required description');
+run("openEntry('expense','1','2026-11-03')");assert.match(body,/value="32,400"/);assert.ok(amountFocused&&amountSelected,'Existing expense amount supports direct replacement');
+console.log('Expense entry: category/description/amount order, card-payment choice, adjacent single save, description-first new entry and editing replacement passed.');

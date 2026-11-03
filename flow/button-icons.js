@@ -1,5 +1,7 @@
 /* Shared, locally bundled SVG icons keep action meanings consistent. */
 Object.assign(iconPaths,{
+ businessAll:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ unclassified:'<path d="M3 13h5l2 3h4l2-3h5v7H3v-7Zm0 0 3-8h3m12 8-3-8h-3"/><path d="M10 5a2 2 0 1 1 3 1.7c-.7.3-1 .8-1 1.8M12 11h.01"/>',
  login:'<path d="M15 3h5v18h-5M3 12h13m-4-4 4 4-4 4"/>',
  save:'<path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M7 3v6h10V3M7 21v-8h10v8M14 5v2"/>',
  camera:'<path d="M8 5 10 2h4l2 3h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/>',
@@ -22,6 +24,10 @@ Object.assign(iconPaths,{
  calendarYear:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h2M12 14h2M17 14h.01M7 18h2M12 18h2M17 18h.01"/>',
  sliders:'<path d="M4 7h7M15 7h5M4 17h3M11 17h9"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'
 });
+const BUSINESS_LOGOS={mimine:'__LOGO__',adw:'__ADW_LOGO__'};
+const PERIOD_ICON_NAMES={today:'sun',week:'calendarWeek',month:'calendar',lastMonth:'calendar',year:'calendarYear',custom:'sliders'};
+function periodIconName(value){return PERIOD_ICON_NAMES[value]||'calendar';}
+function businessFilterVisual(value){return BUSINESS_LOGOS[value]?`<img class="business-brand-image" src="${BUSINESS_LOGOS[value]}" alt="" draggable="false">`:icon(value==='unclassified'?'unclassified':'businessAll');}
 const ACTION_ICON_SPECS={
  export:['download','내보내기','tile'], 'product-new':['packagePlus','상품 등록','tile'],
  'barcode-open':['barcode','바코드'], 'barcode-camera':['camera','카메라'],
@@ -50,29 +56,34 @@ const FORM_ICON_SPECS={
  'receipt-review-form':['packagePlus','확인 후 입고'],'exclude-deposit-form':['ban','대상 제외']
 };
 function buttonIconSpec({action='',value='',text='',type='',className='',formId=''}){
- if(type==='submit'){const spec=FORM_ICON_SPECS[formId]||['save',text||'저장'];return{icon:spec[0],label:spec[1],variant:'inline'};}
+ if(type==='submit'){const spec=FORM_ICON_SPECS[formId]||['save',text||'저장'];return{icon:spec[0],label:formId==='entry-form'?'':spec[1],variant:formId==='entry-form'?'only':'inline'};}
  if(action==='day-edit-sale')return{icon:/수정/.test(text)?'edit':'plus',label:/수정/.test(text)?'매출 수정':'매출 등록',variant:'inline'};
  if(action==='close-modal')return{icon:/확인/.test(text)?'check':'close',label:text||'닫기',variant:'inline'};
  if(action==='toggle-payer-rule')return{icon:/사용 중지/.test(text)?'pause':'play',label:/사용 중지/.test(text)?'사용 중지':'다시 사용',variant:'inline'};
  if(action==='entry')return{icon:'plus',label:/지출|비용/.test(text)?'비용 등록':'매출 등록',variant:'inline'};
  if(action==='entry-type'||action==='ledger-type')return{icon:value==='all'?'list':value==='expense'?'expense':'sales',label:text,variant:'filter'};
- if(['flow-period','range','report-range'].includes(action))return{icon:({today:'sun',week:'calendarWeek',month:'calendar',lastMonth:'calendar',year:'calendarYear',custom:'sliders'})[value]||'calendar',label:text,variant:'filter'};
+ if(['flow-period','range','report-range','deposit-period'].includes(action))return{icon:periodIconName(value),label:text,variant:'period'};
  if(action==='product-filter')return{icon:value==='low'?'alert':value==='expiry'?'clock':'box',label:text,variant:'filter'};
  if(action==='bank-tab')return{icon:value==='compare'?'card':'bank',label:text,variant:'inline'};
- if(['bank-filter','bank-scope','business-filter','deposit-period'].includes(action))return{icon:'filter',label:text,variant:'filter'};
+ if(['bank-filter','bank-scope'].includes(action))return{icon:'filter',label:text,variant:'filter'};
  const spec=ACTION_ICON_SPECS[action];return spec?{icon:spec[0],label:spec[1]||text,variant:spec[2]||'inline'}:null;
 }
 function applyMimineActionIcons(root=document){
  for(const button of root.querySelectorAll('button')){
   if(button.dataset.iconified||button.matches('.icon-button,[role="switch"],.switch,.record-row,.product-card,.receipt-history-row,.revenue-shortcut,.sales-summary-shortcut,.nav-item,.today-tile')||button.closest('#mobile-nav'))continue;
-  const raw=button.textContent.replace(/\s+/g,' ').trim();
+  if(button.dataset.action==='business-filter'){
+   const value=button.dataset.value,label=({all:'전체 사업',mimine:'미미네',adw:'하루온종일',unclassified:'미분류'})[value]||'전체 사업';
+   button.classList.add('business-logo-button');button.dataset.iconified='1';button.dataset.iconName='business-'+value;
+   button.setAttribute('aria-label',label);button.setAttribute('title',label);button.setAttribute('aria-pressed',String(button.classList.contains('active')));button.innerHTML=businessFilterVisual(value);continue;
+  }
+  const raw=button.textContent.replace(/\s+/g,' ').trim()||button.getAttribute('aria-label')||'';
   const value=button.dataset.value||button.dataset.range||button.dataset.type||'';
   const spec=buttonIconSpec({action:button.dataset.action,value,text:raw,type:button.getAttribute('type')||'',className:button.className,formId:button.closest('form')?.id||''});
   if(!spec||!raw)continue;
   const accessible=button.getAttribute('aria-label')||raw;
   button.setAttribute('aria-label',accessible);button.setAttribute('title',accessible);
-  button.classList.add('ui-icon-action');button.classList.add('ui-icon-'+spec.variant);button.dataset.iconified='1';
-  button.innerHTML=icon(spec.icon)+`<span class="ui-action-label">${esc(spec.variant==='filter'?spec.label.replace(/([가-힣])(\d+)$/,'$1 $2'):spec.label)}</span>`;
+  button.classList.add('ui-icon-action');button.classList.add('ui-icon-'+spec.variant);button.dataset.iconified='1';button.dataset.iconName=spec.icon;
+  button.innerHTML=icon(spec.icon)+(spec.variant==='only'?'':`<span class="ui-action-label">${esc(spec.variant==='filter'?spec.label.replace(/([가-힣])(\d+)$/,'$1 $2'):spec.label)}</span>`);
  }
 }
 const renderBeforeActionIcons=render;

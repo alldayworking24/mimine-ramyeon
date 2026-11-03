@@ -6,7 +6,7 @@ const c=vm.createContext({});vm.runInContext(app.slice(app.indexOf('const iconPa
 vm.runInContext(source.slice(0,source.indexOf('const renderBeforeActionIcons=')),c);
 const spec=args=>vm.runInContext('buttonIconSpec('+JSON.stringify(args)+')',c);
 for(const[action,icon]of [['export','download'],['barcode-open','barcode'],['receipt-open','receipt'],['barcode-camera','camera'],['product-new','packagePlus'],['production-logout','logout'],['exclude-deposit','ban'],['product-edit','edit']])assert.equal(spec({action,text:action}).icon,icon);
-for(const[formId,icon,label]of [['entry-form','save','저장'],['barcode-lookup-form','search','상품 찾기'],['receipt-paste-form','list','품목 나누기'],['match-form','link','입금 연결'],['receipt-review-form','packagePlus','확인 후 입고'],['exclude-deposit-form','ban','대상 제외']]){const s=spec({formId,type:'submit'});assert.equal(s.icon,icon);assert.equal(s.label,label);}
+for(const[formId,icon,label]of [['entry-form','save',''],['barcode-lookup-form','search','상품 찾기'],['receipt-paste-form','list','품목 나누기'],['match-form','link','입금 연결'],['receipt-review-form','packagePlus','확인 후 입고'],['exclude-deposit-form','ban','대상 제외']]){const s=spec({formId,type:'submit'});assert.equal(s.icon,icon);assert.equal(s.label,label);}
 assert.equal(spec({action:'toggle-payer-rule',text:'사용 중지'}).icon,'pause');assert.equal(spec({action:'toggle-payer-rule',text:'다시 사용'}).icon,'play');
 assert.equal(spec({action:'day-edit-sale',text:'매출 등록'}).label,'매출 등록');assert.equal(spec({action:'day-edit-sale',text:'매출 수정'}).label,'매출 수정');
 assert.equal(spec({action:'flow-period',value:'week',text:'최근 7일'}).label,'최근 7일');assert.equal(spec({action:'product-filter',value:'expiry',text:'유통기한 임박 3'}).icon,'clock');
@@ -14,3 +14,15 @@ assert.equal(spec({action:'today-sale',text:'198,000원'}),null,'Revenue values 
 assert.equal(spec({action:'product-detail',text:'신라면'}),null,'Product image cards retain their product identity');
 assert.equal(vm.runInContext('Object.values(ACTION_ICON_SPECS).every(s=>!!iconPaths[s[0]])&&Object.values(FORM_ICON_SPECS).every(s=>!!iconPaths[s[0]])',c),true,'No action may silently fall back to an unrelated info icon');
 console.log('Action icons: save/search/import/exclude meanings, stateful controls, full period names and numeric/product identity passed.');
+
+for(const value of ['today','week','month','lastMonth','year','custom']){
+ const home=spec({action:'flow-period',value,text:value});
+ for(const action of ['deposit-period','range','report-range']){
+  const other=spec({action,value,text:value});assert.equal(other.icon,home.icon);assert.equal(other.variant,home.variant);
+ }
+}
+assert.equal(spec({type:'submit',formId:'entry-form',text:'매출 저장'}).variant,'only');
+assert.equal(vm.runInContext("businessFilterVisual('mimine').includes('<img')&&businessFilterVisual('adw').includes('<img')",c),true);
+assert.equal(vm.runInContext("businessFilterVisual('unclassified')===icon('unclassified')",c),true);
+assert.equal(vm.runInContext("businessFilterVisual('all')===icon('businessAll')",c),true);
+console.log('Unified controls: identical period icons, icon-only entry submit and branded/unclassified business filters passed.');
