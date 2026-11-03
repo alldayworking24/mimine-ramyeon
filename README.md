@@ -14,6 +14,8 @@
 
 Node.js 22 이상에서 `npm ci`, `npm run build`, `npm test`를 실행합니다. `npm run preview`는 휴대폰 폭 검증 도구도 엽니다. 빌드는 버전이 고정된 npm 패키지에서 로그인/OCR/바코드 엔진을 준비하고 `dist`를 생성합니다. 최상위와 dist의 index는 같은 내용입니다.
 
-파일 주소(file/content) 또는 `?preview=1`은 가상 데이터로 체험하며, 새로 열면 초기화됩니다. 실제 운영은 https://mimine-ramyeon.netlify.app/ 에서 로그인합니다. 기존 계정·사진·분류·수신폰 관리 화면은 `legacy/index.html`에 보존되어 있습니다.
+`index.html`은 항상 로그인·승인 확인을 거칩니다. 파일 주소(file/content)로 열면 운영 사이트 로그인 링크만 안내하며 자동으로 장부에 들어가지 않습니다. `?preview=1`이나 상위 화면의 가상 제공자는 운영 진입을 우회하지 못합니다. 저장된 로그인도 서버에서 사용자와 사용 승인을 확인합니다.
+
+가상 체험은 ZIP의 별도 `mockup.html` 파일에서만 실행하며, 변경은 새로 열면 초기화됩니다. 일반 `npm run build`는 목업과 검증 도구를 `dist`에 넣지 않습니다. 실제 운영은 https://mimine-ramyeon.netlify.app/ 에서 로그인합니다. 기존 계정·사진·분류·수신폰 관리 화면은 `legacy/index.html`에 보존되어 있습니다.
 
 입금은 은행 직접 조회가 아니라 하루온종일 수신폰의 문자 전달 경로입니다. 키오스크/POS 매출 자동 수집과 상품별 판매 자동 차감은 연결되지 않았습니다. 사진 OCR 결과는 저장 전에 확인·보정합니다.

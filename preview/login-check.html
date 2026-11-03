@@ -1,0 +1,6 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>미미네 · 로그인 보호 검증</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#e8edf1;color:#30404c;font:14px -apple-system,BlinkMacSystemFont,sans-serif}header{text-align:center;padding:18px;background:white}header small{display:block;margin-top:5px;color:#6c788a}iframe{display:block;width:390px;max-width:100%;height:844px;margin:20px auto;border:0;border-radius:18px;outline:5px solid white;box-shadow:0 12px 40px #20374b20}</style>
+<header><strong>미미네 · 로그인 보호 확인</strong><small>미리보기 주소·상위 화면의 가상 모드로 운영 화면에 진입할 수 없습니다.</small></header>
+<iframe id="app-frame" title="미미네 로그인 보호" src="../index.html?preview=1"></iframe>
+<script>window.MimineBridge={isDemo:true,snapshot(){throw Error('운영 화면은 상위 목업을 사용하면 안 됩니다.');}};</script>
+</html>

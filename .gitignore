@@ -13,3 +13,5 @@ dist/
 .openai/
 .netlify/
 .env*
+# Generated offline mockup; excluded from deployment and source control.
+/mockup.html

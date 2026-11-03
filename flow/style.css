@@ -149,6 +149,7 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
 .period-numbers .revenue-shortcut .revenue-edit-cue{display:none}
 
 /* The same period controls and entry actions on every page. */
+.auth-online-link{display:flex;text-align:center;text-decoration:none}.auth-online-link[hidden],#auth-form[hidden],.auth-account-link[hidden]{display:none}
 .ui-icon-period{flex-direction:column;gap:3px;min-height:49px;min-width:48px;padding:5px 4px;font-size:10px}
 .ui-icon-period>svg{width:19px;height:19px}.ui-icon-period>.ui-action-label{white-space:nowrap;font-size:10px}
 .flow-presets>.ui-icon-period,.deposit-presets>.ui-icon-period{flex:1;min-width:0;padding-left:2px;padding-right:2px}
