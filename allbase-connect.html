@@ -23,9 +23,8 @@
   </form>
   <div id="status" class="message" role="status" aria-live="polite"></div>
   <div class="safe">로그인은 미미네에서 처리합니다.<br>비밀번호는 올베이스로 전달하지 않습니다.</div>
-  <div class="back"><a href="/" target="_blank" rel="noopener">기존 앱 열기</a></div>
+  <div class="back"><a id="app-return" href="/" target="_blank" rel="noopener">기존 앱 열기</a></div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script>
 (() => {
   'use strict';
@@ -55,10 +54,94 @@ function launchHash(app,target,values={}){
   return '/#'+params;
 }
 
+  // A return to ALLBASE must be bound to a request created in that browser.
+// Only ciphertext crosses the return URL; its key stays in ALLBASE storage.
+const WORKSPACE_RETURN_PREFIX='#allbase-auth=';
+const WORKSPACE_HANDOFF_KEY='allbase.auth.handoff.v1';
+const WORKSPACE_HANDOFF_TTL=15*60*1000;
+const WORKSPACE_ORIGINS=new Set(['https://allbase.netlify.app','https://allbase.alldayworking.chatgpt.site']);
+const NATIVE_APP_ORIGINS=Object.freeze({mimine:'https://mimine-ramyeon.netlify.app',adw:'https://alldayworking.netlify.app'});
+const nativeOrigins=new Set(Object.values(NATIVE_APP_ORIGINS));
+function returnPath(origin){
+  if(WORKSPACE_ORIGINS.has(origin))return '/';
+  if(nativeOrigins.has(origin))return '/allbase-connect.html';
+  return null;
+}
+const validNonce=value=>typeof value==='string'&&/^[\w-]{48,128}$/.test(value);
+const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
+function encode(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function decode(value){if(typeof value!=='string'||!/^[\w-]+$/.test(value)||value.length>180000)throw Error('Invalid handoff');return Uint8Array.from(atob(value.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))}
+function store(name){try{return globalThis[name]}catch{return null}}
+function read(storage){try{return JSON.parse(storage?.getItem(WORKSPACE_HANDOFF_KEY)||'null')}catch{return null}}
+function valid(input){return input?.v===1&&!!returnPath(input.origin)&&validNonce(input.nonce)&&typeof input.key==='string'&&/^[\w-]{43}$/.test(input.key)&&decode(input.key).length===32}
+function aad(origin,nonce){return encoder.encode('allbase:workspace:return:v1:'+origin+':'+nonce)}
+async function aes(key,usage,cryptoImpl){return cryptoImpl.subtle.importKey('raw',decode(key),'AES-GCM',false,[usage])}
+
+function readWorkspaceLaunch(origin,nonce,hash){
+  try{
+    const params=new URLSearchParams(hash.replace(/^#/,''));
+    const launch={v:1,origin,nonce,key:params.get('allbase-key')};
+    return valid(launch)?launch:null;
+  }catch{return null}
+}
+async function sealWorkspaceReturn(launch,result,cryptoImpl=globalThis.crypto){
+  if(!valid(launch))throw Error('Invalid handoff');
+  const raw=encoder.encode(JSON.stringify(result));
+  if(raw.length>96000)throw Error('Handoff too large');
+  const iv=cryptoImpl.getRandomValues(new Uint8Array(12));
+  const ciphertext=await cryptoImpl.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(launch.origin,launch.nonce)},await aes(launch.key,'encrypt',cryptoImpl),raw);
+  const envelope={v:1,nonce:launch.nonce,iv:encode(iv),data:encode(ciphertext)};
+  return launch.origin+returnPath(launch.origin)+WORKSPACE_RETURN_PREFIX+encode(encoder.encode(JSON.stringify(envelope)));
+}
+
+function createWorkspaceHandoff({persistent=store('localStorage'),temporary=store('sessionStorage'),cryptoImpl=globalThis.crypto,now=()=>Date.now()}={}){
+  function current(){return read(persistent)||read(temporary)}
+  function clear(nonce){
+    for(const storage of [persistent,temporary])try{if(!nonce||read(storage)?.nonce===nonce)storage?.removeItem(WORKSPACE_HANDOFF_KEY)}catch{}
+  }
+  function put(value){
+    // One authoritative copy. Duplicating a pending key in sessionStorage would
+    // let the original tab replay a return already consumed by a different tab.
+    for(const storage of [persistent,temporary])try{
+      if(storage){
+        storage.setItem(WORKSPACE_HANDOFF_KEY,JSON.stringify(value));
+        if(storage===persistent)try{temporary?.removeItem(WORKSPACE_HANDOFF_KEY)}catch{}
+        return true;
+      }
+    }catch{}
+    return false;
+  }
+  function begin(origin,context={}){
+    if(!returnPath(origin)||!cryptoImpl?.subtle||!cryptoImpl?.getRandomValues)return null;
+    clear();
+    const pending={v:1,origin,nonce:cryptoImpl.randomUUID()+cryptoImpl.randomUUID(),key:encode(cryptoImpl.getRandomValues(new Uint8Array(32))),at:now(),context};
+    // Persist before navigating away. A popup without an opener can also return
+    // in a new tab, which requires the shared localStorage copy.
+    return put(pending)?pending:null;
+  }
+  async function consume(hash,origin){
+    if(!hash.startsWith(WORKSPACE_RETURN_PREFIX))return null;
+    const envelope=JSON.parse(decoder.decode(decode(hash.slice(WORKSPACE_RETURN_PREFIX.length))));
+    const pending=current();
+    if(!valid(pending)||pending.origin!==origin||envelope?.v!==1||envelope.nonce!==pending.nonce)throw Error('연결 요청을 확인하지 못했습니다. 올베이스에서 다시 로그인해 주세요.');
+    if(!put({nonce:pending.nonce,returned:true}))throw Error('연결 요청을 저장할 수 없습니다.');
+    try{
+      if(!Number.isFinite(pending.at)||now()<pending.at||now()-pending.at>WORKSPACE_HANDOFF_TTL)throw Error('연결 시간이 지났습니다. 다시 로그인해 주세요.');
+      const iv=decode(envelope.iv);
+      if(iv.length!==12)throw Error('Invalid handoff');
+      const raw=await cryptoImpl.subtle.decrypt({name:'AES-GCM',iv,additionalData:aad(origin,pending.nonce)},await aes(pending.key,'decrypt',cryptoImpl),decode(envelope.data));
+      // Logout or a newer attempt in any tab invalidates an in-flight return.
+      if(current()?.nonce!==pending.nonce||current()?.returned!==true)throw Error('연결이 취소되었습니다. 다시 로그인해 주세요.');
+      return {result:JSON.parse(decoder.decode(raw)),context:pending.context,nonce:pending.nonce,at:pending.at};
+    }finally{clear(pending.nonce)}
+  }
+  return {begin,clear,consume};
+}
+
   const C = {"name": "미미네", "project": "hunoualsfmfckalwbilt", "key": "sb_publishable_DFp-SNqkUWJiX4CHLu_gxQ_FrtXHDwg", "logo": "/mimine-face-logo.png", "targets": ["sales", "expenses", "dashboard", "products", "all"], "id": "mimine"};
   const api = 'https://' + C.project + '.supabase.co/auth/v1/';
   const key = C.key;
-  const allowedOrigins = new Set(['https://allbase.netlify.app', 'https://allbase.alldayworking.chatgpt.site']);
+  const allowedOrigins = WORKSPACE_ORIGINS;
   const targets = new Set(C.targets);
   const params = new URLSearchParams(location.search);
   const origin = params.get('origin'), nonce = params.get('nonce');
@@ -98,25 +181,51 @@ function launchHash(app,target,values={}){
   }
   let client;
   function sb() {
-    if (!client) client = supabase.createClient('https://' + C.project + '.supabase.co', key, {auth:{autoRefreshToken:false, detectSessionInUrl:false}});
+    if (!client) client = (async () => {
+      if (!globalThis.supabase?.createClient) await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = '/flow/vendor/auth/supabase.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('로그인 모듈을 불러오지 못했습니다.'));
+        document.head.append(script);
+      });
+      return globalThis.supabase.createClient('https://' + C.project + '.supabase.co', key, {auth:{autoRefreshToken:false, detectSessionInUrl:false}});
+    })();
     return client;
+  }
+  function savedNativeSession() {
+    try {
+      if (C.id === 'mimine') return JSON.parse(localStorage.getItem('sb-' + C.project + '-auth-token') || 'null');
+      const access_token = localStorage.getItem('alldayworking_private_token');
+      const refresh_token = localStorage.getItem('alldayworking_private_refresh');
+      return access_token && refresh_token ? {access_token, refresh_token} : null;
+    } catch { return null; }
   }
   async function existingSession() {
     if (C.id === 'mimine') {
-      const {data, error} = await sb().auth.getSession();
+      const {data, error} = await (await sb()).auth.getSession();
       if (error) throw error;
       return data.session;
     }
-    const access_token = localStorage.getItem('alldayworking_private_token');
-    const refresh_token = localStorage.getItem('alldayworking_private_refresh');
-    return access_token && refresh_token ? {access_token, refresh_token} : null;
+    return savedNativeSession();
   }
-  function expiry(session) {
-    if (Number(session.expires_at) > 0) return Number(session.expires_at);
+  function claims(session) {
     try {
       const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return Number(JSON.parse(atob(payload)).exp) || 0;
-    } catch { return 0; }
+      return JSON.parse(atob(payload));
+    } catch { return {}; }
+  }
+  function expiry(session) {
+    return Number(session.expires_at) || Number(claims(session).exp) || 0;
+  }
+  async function rememberNativeSession(session) {
+    if (C.id === 'mimine') {
+      const saved = await (await sb()).auth.setSession(session);
+      if (saved.error) throw saved.error;
+    } else {
+      localStorage.setItem('alldayworking_private_token', session.access_token);
+      localStorage.setItem('alldayworking_private_refresh', session.refresh_token);
+    }
   }
   async function accept(session, expected) {
     if (!session?.access_token || !session?.refresh_token) throw new Error('계정 연결 정보를 확인해 주세요.');
@@ -131,14 +240,79 @@ function launchHash(app,target,values={}){
     if (expected && (user.id !== expected.id || user.email?.trim().toLowerCase() !== expected.email?.trim().toLowerCase())) throw new Error('올베이스 계정으로 다시 연결해 주세요.');
     // JWT expiry is scheduling metadata only; the Auth server above verifies identity.
     const expires_at = expiry(fresh);
-    if (C.id === 'mimine') {
-      const saved = await sb().auth.setSession({...fresh, expires_at});
-      if (saved.error) throw saved.error;
-    } else {
-      localStorage.setItem('alldayworking_private_token', fresh.access_token);
-      localStorage.setItem('alldayworking_private_refresh', fresh.refresh_token);
-    }
+    await rememberNativeSession({...fresh, expires_at});
     return {...fresh, expires_at, user:{id:user.id, email:user.email}};
+  }
+  function returnLink(hub) {
+    const link = document.getElementById('app-return');
+    link.href = allowedOrigins.has(hub) ? hub : 'https://allbase.netlify.app';
+    link.removeAttribute('target');
+    link.textContent = '올베이스로 돌아가기';
+  }
+  function isCurrentSession(session, expectedUser) {
+    // This only selects a navigation path. The app verifies identity and access
+    // before displaying data, just as it does on an ordinary revisit.
+    const token = claims(session);
+    return Boolean(expectedUser && session?.refresh_token && token.sub === expectedUser && Number.isFinite(token.exp) && token.exp > Date.now()/1000 + 30);
+  }
+  async function restoreNativeSession(context) {
+    const {account, expectedUser, target, details} = context;
+    let saved = savedNativeSession();
+    if (!isCurrentSession(saved, expectedUser) && expectedUser && claims(saved).sub === expectedUser && saved?.refresh_token) {
+      try {
+        const renewed = C.id === 'mimine' ? await existingSession() : await auth('token?grant_type=refresh_token', {refresh_token:saved.refresh_token});
+        if (isCurrentSession(renewed, expectedUser)) {
+          if (C.id === 'adw') await rememberNativeSession(renewed);
+          saved = renewed;
+        }
+      } catch (error) {
+        if (![400, 401, 403].includes(error.status)) throw error;
+      }
+    }
+    if (isCurrentSession(saved, expectedUser)) { location.replace(launchHash(C.id, target, details)); return; }
+    // Study's own first-party cookie can issue a separate session for this app.
+    const handoff = createWorkspaceHandoff().begin(location.origin, context);
+    if (!handoff) throw new Error('이 탭에 연결 정보를 저장하지 못했습니다.');
+    const url = new URL('/allbase-workspace.html', 'https://alldaystudy.netlify.app');
+    url.search = new URLSearchParams({origin:location.origin, nonce:handoff.nonce, transport:'redirect', app:C.id, account});
+    url.hash = new URLSearchParams({'allbase-key':handoff.key});
+    location.replace(url.toString());
+  }
+  async function receiveNativeSession(hash) {
+    history.replaceState(null, '', '/allbase-connect.html');
+    const returned = await createWorkspaceHandoff().consume(hash, location.origin);
+    const {result, context} = returned;
+    returnLink(context.hub);
+    if (result.error === 'LOGIN_REQUIRED' || result.error === 'ACCOUNT_MISMATCH') {
+      message('연결한 올베이스 계정으로 다시 로그인해 주세요.', true);
+      return;
+    }
+    if (result.error || result.cancelled) {
+      message('앱 연결을 확인하지 못했습니다. 올베이스에서 앱을 다시 열어 주세요.', true);
+      return;
+    }
+    const session = result.session;
+    if (result.account?.id !== context.account || !uuid.test(session?.user?.id || '') ||
+        (context.expectedUser && session.user.id !== context.expectedUser) ||
+        !isCurrentSession(session, session.user.id)) throw new Error('계정 연결 정보를 확인하지 못했습니다.');
+    if (!isCurrentSession(savedNativeSession(), session.user.id)) await rememberNativeSession(session);
+    location.replace(launchHash(C.id, context.target, context.details));
+  }
+  if (location.origin === NATIVE_APP_ORIGINS[C.id] && location.hash?.startsWith(WORKSPACE_RETURN_PREFIX)) {
+    returnLink();
+    void receiveNativeSession(location.hash).catch(() => message('앱 연결을 확인하지 못했습니다. 올베이스에서 다시 열어 주세요.', true));
+    return;
+  }
+  if (params.get('transport') === 'redirect' && intent === 'open') {
+    returnLink(origin);
+    const account = params.get('account'), expectedUser = params.get('user');
+    if (location.origin !== NATIVE_APP_ORIGINS[C.id] || !allowedOrigins.has(origin) || !uuid.test(account || '') || (expectedUser && !uuid.test(expectedUser))) {
+      message('올베이스에서 앱을 열어 주세요.', true);
+      return;
+    }
+    message('저장된 로그인 상태를 확인하고 있습니다.');
+    void restoreNativeSession({hub:origin, account, expectedUser, target, details}).catch(error => message(error.message || '앱 연결을 확인하지 못했습니다.', true));
+    return;
   }
   async function finish(session, expected) {
     const fresh = await accept(session, expected);
