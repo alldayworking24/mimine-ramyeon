@@ -12,7 +12,9 @@ async function setup(today){
  vm.runInContext('render=()=>{}',c);return c;
 }
 const c=await setup('2026-11-03'),run=s=>vm.runInContext(s,c),plain=x=>JSON.parse(JSON.stringify(x));
-assert.deepEqual(plain(run('[flow.start,flow.end,flow.selected]')),['2026-10-28','2026-11-10','2026-11-03']);
+assert.deepEqual(plain(run('[flow.start,flow.end,flow.selected]')),['2026-11-01','2026-11-30','2026-11-03']);
+assert.equal(run('flow.preset'),'month');
+run("setFlowPreset('week')");
 assert.equal(run('dailyRows().length'),14);assert.equal(run('dailyRows().filter(r=>r.future).length'),7);
 for(const[p,a,b]of [['today','2026-11-03','2026-11-03'],['month','2026-11-01','2026-11-30'],['lastMonth','2026-10-01','2026-10-31'],['year','2026-01-01','2026-12-31'],['week','2026-10-28','2026-11-10']]){
  run(`setFlowPreset('${p}')`);assert.deepEqual(plain(run('[flow.start,flow.end]')),[a,b]);assert.equal(run('flow.selected'),p==='lastMonth'?'2026-10-31':'2026-11-03');

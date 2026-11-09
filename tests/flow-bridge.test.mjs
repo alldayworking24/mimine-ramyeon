@@ -11,8 +11,8 @@ const tables={
  mimine_settings:[{setting_key:'recurring_payment_rules_v1',setting_value:{rules:[{id:'rent',type:'rent',day:1,amount:500000,active:true}],closedDays:[]}}],
  mimine_stock_documents:[]
 };
-const calls=[];let bankFailure=false,imageFailure=false;
-function query(table){const q={select(){return q},order(){return q},range(){return q},abortSignal(){return q},eq(){return q},maybeSingle(){return Promise.resolve({data:(tables[table]||[])[0]||null,error:null})},upsert(data){calls.push({table,data});return q},delete(){calls.push({delete:table});return q},then(resolve){return Promise.resolve({data:imageFailure&&table==='product_images'?null:tables[table]||[],error:imageFailure&&table==='product_images'?{message:'사진 조회 오류'}:null}).then(resolve)}};return q;}
+const calls=[],reads=[];let bankFailure=false,imageFailure=false;
+function query(table){reads.push(table);const q={select(){return q},order(){return q},range(){return q},abortSignal(){return q},eq(){return q},maybeSingle(){return Promise.resolve({data:(tables[table]||[])[0]||null,error:null})},upsert(data){calls.push({table,data});return q},delete(){calls.push({delete:table});return q},then(resolve){return Promise.resolve({data:imageFailure&&table==='product_images'?null:tables[table]||[],error:imageFailure&&table==='product_images'?{message:'사진 조회 오류'}:null}).then(resolve)}};return q;}
 const appView={classList:{contains:()=>true}};
 const context={console,Intl,Date,Map,Number,JSON,String,Promise,AbortSignal,URLSearchParams,localStorage:{getItem:()=>null},location:{hash:''},window:{},document:{getElementById:id=>id==='appView'?appView:null,body:{classList:{remove(){}}},head:{append(){}},createElement:()=>({})},MutationObserver:class{observe(){}},db:{auth:{getSession:async()=>({data:{session:{access_token:'test',user:{id:'fixture-user'}}}}),onAuthStateChange(){}},from:query,rpc:async(name,args)=>{calls.push({name,args});return{data:{ok:true},error:null}}},bankApi:async payload=>{
  if(bankFailure)throw new Error('은행 서버 오류');
@@ -38,3 +38,21 @@ assert.match(imageError.connection.imageError,/사진 조회 오류/);assert.equ
 console.log('Product images: primary/sort priority and independent image failure handling passed.');
 
 await bridge.invoke('payment-rules',{rules:[{id:'rent',type:'rent',day:1,amount:500000}],closedDays:[]});assert.equal(calls.at(-1).table,'mimine_settings');assert.equal(calls.at(-1).data.setting_key,'recurring_payment_rules_v1');assert.equal(calls.at(-1).data.updated_by,'fixture-user');assert.equal(snapshot.paymentRulesConfigured,true);assert.equal(snapshot.paymentRules[0].day,1);console.log('Payment settings: existing authenticated JSON settings read/write routing passed.');
+
+reads.length=0;bankFailure=false;
+const first=await bridge.snapshot({scope:'finance'});
+assert.deepEqual(reads,['sales','expenses']);
+assert.equal(first.connection.bankReady,false);
+assert.equal(first.connection.stockReady,false);
+assert.equal(first.connection.paymentReady,false);
+reads.length=0;
+const bankOnly=await bridge.snapshot({scope:'bank',base:first});
+assert.deepEqual(reads,[],'Bank refresh must not read ledger, inventory or settings tables');
+assert.equal(bankOnly.sales[0].card,90000);
+assert.equal(bankOnly.expenses[0].amount,5000);
+reads.length=0;
+const stockOnly=await bridge.snapshot({scope:'stock',base:bankOnly});
+assert.deepEqual(reads,['products','product_categories','product_purchase_batches','mimine_stock_documents','product_images']);
+assert.equal(stockOnly.sales[0].card,90000);
+assert.equal(stockOnly.events.length,1);
+console.log('Scoped bootstrap and page reads preserve existing financial state without unrelated requests.');

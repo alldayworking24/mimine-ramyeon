@@ -31,3 +31,14 @@ function setup(){
  assert.equal(rendered.length,1);
 }
 console.log('Background refresh: menu availability, edit protection and stale-response protection passed.');
+
+// A confirmed row is enough to repaint the sale; no unrelated reads after save.
+{
+ let snapshots=0;
+ const c={window:{MimineBridge:{snapshot:async()=>{snapshots++;throw Error('unexpected snapshot');},invoke:async()=>({sale:{date:'2026-11-03',id:'s-2026-11-03',remoteId:'5',amount:162000,note:'수정'}})}},
+ db:{sales:[{date:'2026-11-03',amount:161130}],expenses:[{id:'e1'}]},modalName:'entry',render(){},toast(){},closeModal(){c.modalName='';},$$:()=>[],$:()=>null};
+ vm.createContext(c);vm.runInContext(prefix,c);
+ assert.equal(await vm.runInContext("productionWrite('sale',{},'saved')",c),true);
+ assert.equal(c.db.sales[0].amount,162000);assert.equal(c.db.expenses[0].id,'e1');assert.equal(snapshots,0);assert.equal(c.modalName,'');
+}
+console.log('Confirmed sale save patches one row with zero snapshot reloads.');

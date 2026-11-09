@@ -114,4 +114,3 @@ document.addEventListener('click',e=>{
  if(svg.dataset.action==='annual-chart-pick'){const month=Math.max(1,Math.min(12,Math.round((ratio*760-12)/736*11)+1));annual.selected=month;render();openAnnualMonth(month);}
  else if(svg.dataset.action==='home-yoy-pick'){const rows=cumulativeSalesRows(),i=Math.max(0,Math.min(rows.length-1,Math.round((ratio*760-12)/736*(rows.length-1))));flow.selected=rows[i].date;render();openDayDetail(flow.selected);}
 });
-render();

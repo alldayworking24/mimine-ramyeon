@@ -227,3 +227,21 @@ html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;overscroll-behavior-x
 @media(prefers-reduced-motion:reduce){.payment-roll-item{animation:none}}
 @media(max-width:760px){.payment-banner{margin-bottom:12px}.payment-roll-item{padding:10px 8px;gap:7px}.payment-roll-head{gap:5px}.payment-roll-head>strong{font-size:12px}.payment-roll-head>b{font-size:14px}.payment-status{font-size:9px;padding:4px}.payment-status-icon{width:28px;height:28px;flex-basis:28px}.payment-roll-date{font-size:10px}.yoy-equation{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.yoy-equation>div+div{padding-left:10px}}
 .payment-roll-controls{width:54px;flex-basis:54px}.payment-next{display:flex;align-items:center;justify-content:center;gap:1px;min-height:28px;min-width:29px;padding:3px 0;border:0;background:none;color:#929eae;font-size:9px}.payment-next svg{width:10px;height:10px}
+
+/* Compact payment ticker and independent daily chart scales. */
+.payment-roll-row{min-height:42px;align-items:center}
+.payment-roll-item{min-height:42px;padding:7px 9px;gap:6px}
+.payment-roll-item .payment-status-icon{display:none}
+.payment-roll-head{gap:6px;white-space:nowrap}
+.payment-roll-controls{width:auto;flex:0 0 auto;flex-direction:row;gap:2px}
+.payment-roll-controls>.icon-button{width:30px;min-width:30px;height:36px}
+.payment-roll-controls>div{gap:0}
+.payment-next,.payment-pause{min-height:36px}
+.split-period-number{grid-template-columns:1fr}
+.flow-chart-card:has(.split-period-number) .chart-day-values{grid-template-columns:1fr 1fr}
+@media(max-width:400px){
+ .payment-roll-head>strong{font-size:11px}
+ .payment-roll-head>b{font-size:12px}
+ .payment-roll-head .payment-status{padding:3px;font-size:9px}
+ .payment-roll-controls>.icon-button{width:25px;min-width:25px}
+}

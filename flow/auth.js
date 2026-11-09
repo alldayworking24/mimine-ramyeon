@@ -18,7 +18,7 @@ async function createMimineAuthenticatedBridge(){
  let sdk;try{sdk=await loadMimineSdk();}catch(error){message.textContent=error.message;button.disabled=true;return new Promise(()=>{});}
  const client=sdk.createClient('https://hunoualsfmfckalwbilt.supabase.co','sb_publishable_DFp-SNqkUWJiX4CHLu_gxQ_FrtXHDwg');
  return new Promise(resolve=>{
-  let opened=false,checking=false,activeUserId='',revision=0;
+  let opened=false,checking=false,submitting=false,activeUserId='',revision=0;
   function lock(){
    document.body.classList.add('auth-loading');
    document.getElementById('main').replaceChildren();
@@ -30,11 +30,15 @@ async function createMimineAuthenticatedBridge(){
    const startedRevision=revision;
    checking=true;button.disabled=true;message.textContent='사용 권한을 확인하고 있어요.';
    try{
-    const verified=await client.auth.getUser();
+    const candidate=session.user;
+    if(!candidate?.id||candidate.is_anonymous)throw new Error('유효한 계정으로 다시 로그인해 주세요.');
+    const [verified,{data,error}]=await Promise.all([
+     client.auth.getUser(),
+     client.from('app_users').select('is_active').eq('user_id',candidate.id).maybeSingle()
+    ]);
     if(verified.error)throw verified.error;
     const user=verified.data?.user;
-    if(!user?.id||user.id!==session.user?.id||user.is_anonymous)throw new Error('유효한 계정으로 다시 로그인해 주세요.');
-    const{data,error}=await client.from('app_users').select('is_active').eq('user_id',user.id).maybeSingle();
+    if(!user?.id||user.id!==candidate.id||user.is_anonymous)throw new Error('유효한 계정으로 다시 로그인해 주세요.');
     if(error)throw error;if(!data?.is_active)throw new Error('사용 승인이 필요한 계정입니다. 기존 계정 상태를 확인해 주세요.');
     if(startedRevision!==revision)return;
     opened=true;activeUserId=user.id;message.textContent='매장 데이터를 불러오고 있어요.';
@@ -43,10 +47,10 @@ async function createMimineAuthenticatedBridge(){
    finally{checking=false;if(!opened)button.disabled=false;}
   }
   form.addEventListener('submit',async event=>{
-   event.preventDefault();if(checking||opened)return;button.disabled=true;message.textContent='로그인하고 있어요.';
+   event.preventDefault();if(checking||submitting||opened)return;submitting=true;button.disabled=true;message.textContent='로그인하고 있어요.';
    try{const{data,error}=await client.auth.signInWithPassword({email:form.elements.email.value.trim(),password:form.elements.password.value});if(error)throw error;await open(data.session);}
    catch(error){message.textContent=error.message||'로그인하지 못했습니다.';}
-   finally{if(!opened)button.disabled=false;}
+   finally{submitting=false;if(!opened&&!checking)button.disabled=false;}
   });
   client.auth.onAuthStateChange((event,session)=>{
    if(event==='SIGNED_OUT')revision++;

@@ -4,16 +4,23 @@ function paymentConfig(){
  const rules=db.paymentRulesConfigured?db.paymentRules:paymentInferredRules(db.expenses.filter(e=>e.date<=TODAY));
  return paymentValidateConfig({rules,closedDays:db.paymentClosedDays||[]});
 }
-function paymentItems(){try{return paymentVisibleInstances(paymentConfig(),db.expenses,TODAY);}catch{return[];}}
+let paymentCache;
+function paymentItems(){
+ const keys=[db.expenses,db.paymentRules,db.paymentClosedDays,db.paymentRulesConfigured];
+ if(paymentCache&&keys.every((key,i)=>key===paymentCache.keys[i]))return paymentCache.items;
+ let items=[];try{items=paymentVisibleInstances(paymentConfig(),db.expenses,TODAY);}catch{}
+ paymentCache={keys,items};return items;
+}
 const paymentStateLabel={paid:'납부 완료',pending:'납부 예정',partial:'일부 납부',overdue:'기한 지남'};
 function paymentBannerContent(){
+ if(db.connection?.paymentReady===false)return '<span class="payment-empty" role="status">납부 알림을 불러오는 중</span>';
  if(db.connection?.paymentSettingsError)return '<button type="button" class="payment-empty" data-action="production-refresh">'+icon('alert')+'<span>납부일 설정을 불러오지 못했어요.<small>눌러서 다시 확인</small></span></button>';
  const items=paymentItems();paymentUi.index=items.length?paymentUi.index%items.length:0;
  const item=items[paymentUi.index];
  if(!item)return '<button type="button" class="payment-empty" data-action="payment-settings">'+icon('calendar')+'<span>매월 납부할 항목을 등록하세요.<small>임대료·카드 결제일을 한눈에</small></span>'+icon('plus')+'</button>';
  const actual=item.status==='paid'?item.paidAmount:item.rule.amount,amount=actual?won(actual):'금액 미정';
  const days=daysBetween(TODAY,item.due),when=item.status==='paid'?md(item.records.map(e=>e.date).sort().at(-1))+' 비용 입력 · 납부일 '+md(item.due):md(item.due)+' '+weekday(item.due)+'요일'+(days===0?' · 오늘':days>0?' · D−'+days:' · '+Math.abs(days)+'일 지남');
- return '<div class="payment-roll-row"><button type="button" class="payment-roll-item is-'+item.status+'" data-action="payment-detail" data-id="'+esc(item.key)+'" aria-label="'+esc(paymentStateLabel[item.status]+' '+item.rule.name+' '+amount+' '+when)+'"><span class="payment-status-icon">'+icon(item.status==='paid'?'check':item.status==='overdue'?'alert':item.rule.type==='card'?'card':'calendar')+'</span><span class="payment-roll-copy"><span class="payment-roll-head"><span class="payment-status">'+paymentStateLabel[item.status]+'</span><strong>'+esc(item.rule.name)+'</strong><b>'+amount+'</b></span><span class="payment-roll-date">'+when+(item.adjusted?' · 휴일 조정':'')+(!item.calendarVerified?' · 공휴일 확인 필요':'')+'</span></span></button><div class="payment-roll-controls"><button type="button" class="icon-button" data-action="payment-settings" aria-label="정기 납부일 설정">'+icon('settings')+'</button><div><button type="button" class="payment-next" data-action="payment-next" aria-label="다음 납부 알림">'+(paymentUi.index+1)+'/'+items.length+icon('right')+'</button><button type="button" class="payment-pause" data-action="payment-pause" aria-pressed="'+paymentUi.paused+'" aria-label="'+(paymentUi.paused?'납부 알림 롤링 재개':'납부 알림 롤링 일시정지')+'">'+icon(paymentUi.paused?'play':'pause')+'</button></div></div></div>';
+ return '<div class="payment-roll-row"><button type="button" class="payment-roll-item is-'+item.status+'" data-action="payment-detail" data-id="'+esc(item.key)+'" aria-label="'+esc(paymentStateLabel[item.status]+' '+item.rule.name+' '+amount+' '+when)+'"><span class="payment-status-icon">'+icon(item.status==='paid'?'check':item.status==='overdue'?'alert':item.rule.type==='card'?'card':'calendar')+'</span><span class="payment-roll-copy"><span class="payment-roll-head"><span class="payment-status">'+paymentStateLabel[item.status]+'</span><strong>'+esc(item.rule.name)+'</strong><b>'+amount+'</b></span></span></button><div class="payment-roll-controls"><button type="button" class="icon-button" data-action="payment-settings" aria-label="정기 납부일 설정">'+icon('settings')+'</button><div><button type="button" class="payment-next" data-action="payment-next" aria-label="다음 납부 알림">'+(paymentUi.index+1)+'/'+items.length+icon('right')+'</button><button type="button" class="payment-pause" data-action="payment-pause" aria-pressed="'+paymentUi.paused+'" aria-label="'+(paymentUi.paused?'납부 알림 롤링 재개':'납부 알림 롤링 일시정지')+'">'+icon(paymentUi.paused?'play':'pause')+'</button></div></div></div>';
 }
 function paymentBanner(){return '<section class="payment-banner" aria-label="정기 납부 알림" data-swipe-ignore="true"><div id="payment-roll" aria-live="off">'+paymentBannerContent()+'</div></section>';}
 function paymentStartTicker(){
@@ -61,6 +68,9 @@ function readPaymentRule(row){
  return{id:row.dataset.ruleId,type:value('type'),name:value('name')||'',card:value('card')||'',day:Number(value('day')),amount:num(value('amount')),active:row.querySelector('[data-field=active]').checked};
 }
 function openPaymentSettings(){
+ if(db.connection?.paymentReady===false||db.connection?.paymentSettingsError){
+  toast('납부 설정을 먼저 불러와야 해요. 홈에서 다시 시도해 주세요.');return;
+ }
  let config;try{config=paymentConfig();}catch{config={rules:[],closedDays:[]};}
  sheet('매월 납부일 설정','<p class="payment-settings-intro">주말·공휴일은 다음 영업일로 옮깁니다. 비용에 입력된 내역과 연결해 납부 상태를 표시합니다.</p><div id="payment-rules-list">'+config.rules.map(paymentRuleRow).join('')+'</div><button type="button" class="secondary full" data-action="payment-add-rule">'+icon('plus')+'납부 항목 추가</button><details class="payment-calendar-options"><summary>임시휴일 추가 '+icon('down')+'</summary>'+field('추가 휴일 · 한 줄에 날짜 1개','<textarea name="closed-days" rows="3" placeholder="예: 2026-12-31">'+esc(config.closedDays.join('\n'))+'</textarea>')+'<p class="field-note">2026·2027년 공휴일·대체공휴일 반영 ('+PAYMENT_CALENDAR_CHECKED+' 확인). 추가 지정되는 임시공휴일은 여기에서 등록할 수 있어요.</p></details><p class="field-note spacer">31일이 없는 달은 그달 말일 기준입니다. 카드사는 카드별 실제 결제일을 입력해 주세요. 이 설정은 이체를 실행하지 않습니다.</p>','<button type="submit" class="primary">'+icon('check')+'납부일 적용</button>',{name:'payment-settings',form:'payment-settings-form'});
 }
@@ -106,4 +116,3 @@ submitForm=async function(form){
  }catch(error){showError(error.message);}
 };
 document.addEventListener('change',e=>{if(e.target.matches('.payment-rule-editor [data-field=type]')){const row=e.target.closest('.payment-rule-editor'),r=readPaymentRule(row);if(r.type==='rent')r.name='임대료';else if(r.type==='card')r.name=r.card;row.outerHTML=paymentRuleRow(r);}});
-render();

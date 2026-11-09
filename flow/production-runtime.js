@@ -1,5 +1,5 @@
 /* This adapter replaces every prototype write with an authenticated server operation. */
-let productionBusy=false,productionClosing=false,productionRefreshing=false,productionRevision=0;
+let productionBusy=false,productionClosing=false,productionRevision=0;
 const productionBridge=window.MimineBridge;
 function productionCategories(){return[...new Set(['라면','컵라면','음료','토핑','기타',...db.products.map(p=>p.category)])];}
 function requestId(){if(crypto.randomUUID)return crypto.randomUUID();const b=crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
@@ -8,14 +8,55 @@ persist=preferenceSave;
 notifyMutation=function(message){preferenceSave();render();toast(message);};
 saveSupplyData=function(){throw new Error('서버 저장 경로가 필요한 요청입니다.');};
 const productionClose=closeModal;
-closeModal=function(){if(productionBusy&&!productionClosing)return;return productionClose();};
+closeModal=function(){
+ if(productionBusy&&!productionClosing)return;
+ const result=productionClose();
+ if(!productionBridge.isDemo&&!productionBusy)queueMicrotask(()=>{loadProductionPage();if(!db.connection?.paymentReady)void refreshProduction(true,'settings');});
+ return result;
+};
 function applyProductionSnapshot(next){db=next;render();}
-async function refreshProduction(silent=false){
- if(productionBusy||productionRefreshing||modalName)return;
- productionRefreshing=true;const revision=productionRevision;
- try{const next=await productionBridge.snapshot();if(revision!==productionRevision||productionBusy||modalName)return;applyProductionSnapshot(next);if(!silent)toast('최신 내역을 불러왔어요.');}
- catch(error){toast('불러오기 실패: '+error.message);}
- finally{productionRefreshing=false;}
+let productionPending=new Map(),lastFinanceRefresh=Date.now(),lastBankRefresh=0;
+function mergeProductionRead(next,scope){
+ if(scope==='all')return next;
+ const fields={finance:['sales','expenses'],settings:['paymentRulesConfigured','paymentRules','paymentClosedDays'],bank:['events','links','payerRules'],stock:['products','receipts']}[scope];
+ const flags={finance:['refreshedAt'],settings:['paymentReady','paymentSettingsError'],bank:['bankReady','bankError','truncated','bankStart','bankEnd','refreshedAt'],stock:['stockReady','stockError','imageError']}[scope];
+ const merged={...db,connection:{...db.connection}};
+ for(const key of fields)merged[key]=next[key];
+ for(const key of flags)merged.connection[key]=next.connection[key];
+ // Merge settlement metadata independently of the ledger amounts.
+ if(scope==='bank'||scope==='finance'){
+  const amounts=scope==='bank'?db.sales:next.sales;
+  const detail=new Map((scope==='bank'?next.sales:db.sales).map(s=>[s.date,s]));
+  merged.sales=amounts.map(s=>{
+   const t=detail.get(s.date);if(!t)return s;
+   const {card,cash,other,fee,due,settlementKnown}=t;
+   return {...s,card,cash,other,fee,due,settlementKnown,settlementConsistent:!settlementKnown||card+cash+other===s.amount};
+  });
+ }
+ return merged;
+}
+function refreshProduction(silent=false,scope='all'){
+ if(productionPending.has(scope))return productionPending.get(scope);
+ if(scope==='all')productionRevision++;
+ else if(productionPending.has('all'))return productionPending.get('all');
+ const run=async()=>{
+  if(productionBusy||modalName)return false;
+  const revision=productionRevision;
+  try{
+   const next=await productionBridge.snapshot({scope,base:db});
+   if(revision!==productionRevision||productionBusy||modalName)return false;
+   if(scope==='finance'||scope==='all')lastFinanceRefresh=Date.now();
+   if(scope==='bank'||scope==='all')lastBankRefresh=Date.now();
+   // Background data must not disturb typing or rebuild an unrelated page.
+   db=mergeProductionRead(next,scope);if(scope==='all'||(scope==='finance'&&['today','ledger','reports'].includes(view.page))||(scope==='settings'&&view.page==='today')||(scope==='stock'&&view.page==='products')||(scope==='bank'&&view.page==='bank'))render();
+   if(!silent)toast('최신 내역을 불러왔어요.');
+   return true;
+  }catch(error){if(!silent||scope===view.page||(scope==='stock'&&view.page==='products'))toast('불러오기 실패: '+error.message);return false;}
+ };
+ const job=run();
+ productionPending.set(scope,job);
+ void job.finally(()=>productionPending.delete(scope));
+ return job;
 }
 async function productionWrite(command,payload,message,after){
  if(productionBusy)return false;
@@ -23,7 +64,17 @@ async function productionWrite(command,payload,message,after){
  try{
   const result=await productionBridge.invoke(command,payload);
   let next;
-  try{next=await productionBridge.snapshot();}
+  try{
+   if(command==='sale'&&result?.sale){
+    const old=db.sales.find(s=>s.date===result.sale.date);
+    const saved={card:0,cash:0,other:0,fee:0,due:'',settlementKnown:false,settlementConsistent:true,...old,...result.sale};
+    if(result.warning&&old?.settlementKnown)saved.settlementConsistent=saved.card+saved.cash+saved.other===saved.amount;
+    next={...db,sales:[...db.sales.filter(s=>s.date!==saved.date),saved].sort((a,b)=>b.date.localeCompare(a.date))};
+   }else{
+    const scope=command==='bank'?'bank':command==='payment-rules'?'settings':command==='stocktake'||(command==='stock'&&!payload.document?.addExpense)?'stock':['expense','delete','sale'].includes(command)?'finance':'all';
+    next=await productionBridge.snapshot({scope,base:db});
+   }
+  }
   catch(error){productionClosing=true;closeModal();productionClosing=false;toast('저장은 완료됐지만 최신 내역을 불러오지 못했어요. 설정에서 새로고침해 주세요.');return true;}
   productionClosing=true;closeModal();productionClosing=false;applyProductionSnapshot(next);
   if(result?.warning){sheet('정산정보 확인 필요',`<p>${esc(result.warning)}</p>`,'<button class="secondary" data-action="close-modal">확인</button>',{name:'save-warning'});}
@@ -45,6 +96,7 @@ render=function(){
 };
 const productionBankRender=renderBank;
 renderBank=function(){
+ if(!productionBridge.isDemo&&!db.connection?.bankReady&&!db.connection?.bankError)return heading('BANK','통장 입금','입금 내역을 불러오고 있어요.')+'<button class="secondary" data-action="production-refresh">다시 불러오기</button>';
  if(db.connection?.bankError)return heading('BANK','통장 입금','연결 상태를 확인해 주세요.')+`<section class="list-card production-bank-error"><h2>입금내역을 불러오지 못했어요.</h2><p>${esc(db.connection.bankError)}</p><button class="primary" data-action="production-refresh">다시 불러오기</button><button class="secondary" data-action="production-devices">수신폰·연결 관리</button></section>`;
  const bankNote=productionBridge.isDemo?'미리보기용 가상 입금입니다. 실제 입금 자동 수신은 운영 서버 연결 후 사용할 수 있습니다.':'하루온종일의 실제 문자 수신 내역입니다. 수신폰 전달이 작동하는 동안 앱을 닫아도 서버에 저장됩니다. 화면은 60초마다 갱신합니다. 최근 5년 범위에서 조회합니다.';
  return productionBankRender().replace('이 목업은 수신 체험 데이터로 동작합니다. 실제 자동 수신은 하루온종일의 문자 수신 서버 연결이 필요합니다.',bankNote).replace(/<button class="text-button" data-action="sms-demo">[\s\S]*?<\/button>/,'<button class="text-button" data-action="production-refresh">새로고침</button>');
@@ -58,14 +110,15 @@ saveEntry=async function(form){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>TODAY)return showError('오늘까지의 날짜를 입력해 주세요.');
  if(amount>999999999||(type==='expense'&&amount<=0))return showError('금액 범위를 확인해 주세요.');
  if(type==='sale'){
-  const old=saleOn(date);let settlement=null;
+  const old=saleOn(date);
+  let settlement=null;
   if(modalContext.split){settlement={card:num(fd.get('card')),cash:num(fd.get('cash')),other:num(fd.get('other')),fee:num(fd.get('fee')),dueDate:String(fd.get('due')||''),note:String(fd.get('note')||'')};}
   else if(old?.settlementKnown){
    if(old.settlementConsistent===false)return showError('기존 정산정보가 일매출과 다릅니다. 결제수단을 열어 합계를 맞춰 주세요.');
    settlement={card:amount-old.cash-old.other,cash:old.cash,other:old.other,fee:old.fee,dueDate:old.due,note:String(fd.get('note')||'')};
   }
   if(settlement){if(settlement.card<0||settlement.card+settlement.cash+settlement.other!==amount)return showError('카드·현금·기타 합계를 총매출과 맞춰 주세요.');if(settlement.fee>settlement.card)return showError('수수료는 카드 매출보다 클 수 없어요.');if(old&&linked(old)>settlement.card-settlement.fee)return showError('연결된 입금보다 정산액이 작습니다. 정산 연결을 먼저 해제해 주세요.');}
-  view.date=date;return productionWrite('sale',{date,amount,note:String(fd.get('note')||''),settlement},'매출을 서버에 저장했어요.');
+  view.date=date;return productionWrite('sale',{date,amount,note:String(fd.get('note')||''),settlement,verifySettlement:!!old&&!productionBridge.isDemo&&!db.connection?.bankReady,previousAmount:old?.amount},'매출을 서버에 저장했어요.');
  }
  const vendor=String(fd.get('vendor')||'').trim();if(!vendor)return showError('사용처나 내용을 입력해 주세요.');
  return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:paymentComposeNote(fd.get('note'),fd.get('payment-link'))},'비용을 서버에 저장했어요.');
@@ -110,7 +163,7 @@ action=function(el){
  const{action:a,id}=el.dataset;
  if(productionBusy)return;
  switch(a){
- case'production-refresh':closeModal();void refreshProduction();return;
+ case'production-refresh':{const settingsOpen=modalName==='settings';closeModal();void refreshProduction(false,settingsOpen?'all':view.page==='bank'?'bank':view.page==='products'?'stock':'settings');return;}
  case'production-devices':closeModal();productionBridge.legacy('devices');return;
  case'production-legacy':closeModal();productionBridge.legacy('products');return;
  case'production-logout':closeModal();void productionBridge.logout();return;
@@ -125,7 +178,38 @@ const originalDayDetail=openDayDetail;
 openDayDetail=function(date){originalDayDetail(date);const sale=saleOn(date);if(sale&&!sale.settlementKnown){const box=$('.day-payment-summary');if(box)box.innerHTML='<h3>결제수단</h3><p class="field-note">결제수단·정산정보가 아직 등록되지 않았습니다.</p>';}else if(sale?.settlementConsistent===false){$('.sheet-body').insertAdjacentHTML('afterbegin','<p class="production-notice">일매출과 정산정보의 합계가 다릅니다. 결제수단을 확인해 주세요.</p>');}};
 saleStatus=function(s){if(!s.settlementKnown)return'정산정보 미등록';if(s.settlementConsistent===false)return'정산 합계 확인';if(!s.card)return'현금·기타 매출';if(!s.due)return'예정일 미등록';if(!remaining(s))return'입금 완료';if(linked(s))return'일부 입금';return s.due<=TODAY?'확인 필요':'입금 예정';};
 const launchPage=productionBridge.launch;if(['sales','expenses','all'].includes(launchPage)){view.page='ledger';view.ledgerType=launchPage==='sales'?'sale':launchPage==='expenses'?'expense':'all';}else if(launchPage==='products')view.page='products';
-window.MimineFlowRefresh=()=>refreshProduction(true);
-setInterval(()=>{if(!document.hidden&&!modalName)void refreshProduction(true);},60000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!modalName)void refreshProduction(true);});
-render();
+const receiptRecordBeforeLazy=openReceiptRecord;
+openReceiptRecord=async function(id){
+ const record=db.receipts.find(r=>r.id===id);
+ if(!record||productionBridge.isDemo||record.imageLoaded||!productionBridge.receipt)return receiptRecordBeforeLazy(id);
+ sheet('영수증 입고 상세','<p role="status">영수증 사진을 불러오고 있어요.</p>','<button class="secondary" data-action="close-modal">닫기</button>',{name:'receipt-loading'});
+ const element=$('.sheet');
+ try{
+  const saved=await productionBridge.receipt(id);
+  if(!element?.isConnected)return;
+  Object.assign(record,{imageData:saved.image_data,rawText:saved.raw_text,imageLoaded:true});
+  receiptRecordBeforeLazy(id);
+ }catch(error){if(element?.isConnected){receiptRecordBeforeLazy(id);toast('영수증 사진을 불러오지 못했어요: '+error.message);}}
+};
+const renderProductsBeforeLazy=renderProducts;
+renderProducts=function(){
+ if(!productionBridge.isDemo&&!db.connection?.stockReady)return heading('PRODUCTS','상품·재고','상품을 불러오고 있어요.')+'<button class="secondary" data-action="production-refresh">다시 불러오기</button>';
+ return renderProductsBeforeLazy();
+};
+function loadProductionPage(){
+ if(productionBridge.isDemo)return;
+ if(view.page==='products'&&!db.connection?.stockReady)void refreshProduction(true,'stock');
+ if(view.page==='bank'&&(!db.connection?.bankReady||Date.now()-lastBankRefresh>=60000))void refreshProduction(true,'bank');
+}
+const navigateBeforeLazy=navigate;
+navigate=function(page){if(view.page!==page||modalName)navigateBeforeLazy(page);loadProductionPage();};
+window.MimineFlowRefresh=()=>refreshProduction(true,'bank');
+if(!productionBridge.isDemo){
+ setInterval(()=>{if(!document.hidden&&!modalName&&view.page==='bank')void refreshProduction(true,'bank');},60000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!modalName&&Date.now()-lastFinanceRefresh>=60000){void refreshProduction(true,'finance');if(view.page==='bank')void refreshProduction(true,'bank');}});
+}
+if(!productionBridge.isDemo)requestAnimationFrame(()=>setTimeout(()=>{
+ loadProductionPage();
+ void refreshProduction(true,'settings');
+ if(view.page!=='bank')void refreshProduction(true,'bank');
+},0));
