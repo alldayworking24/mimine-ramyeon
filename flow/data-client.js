@@ -99,7 +99,11 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    return result;
   }
   if(command==='expense'){
-   const r=await db.rpc('mimine_save_expense',{p_request_id:payload.requestId,p_expense:payload});if(r.error)throw new Error(r.error.message);return r.data;
+   const r=await db.rpc('mimine_save_expense',{p_request_id:payload.requestId,p_expense:payload});if(r.error)throw new Error(r.error.message);
+   const result=r.data||{};
+   // Confirm only this saved row; do not fetch the entire sales/expense history.
+   if(result.id){try{const row=await db.from('expenses').select('id,expense_date,amount,category,vendor,memo').eq('id',result.id).abortSignal(AbortSignal.timeout(10000)).maybeSingle();if(!row.error&&row.data){const e=row.data;result.expense={id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo)};}}catch{}}
+   return result;
   }
   if(command==='delete'){
    const table=payload.type==='sale'?'sales':'expenses';
@@ -123,6 +127,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   const data=await r.json();if(!r.ok)throw new Error(data.error||'통장 연결에 실패했습니다.');return data;
  }
  return {launch,isDemo:false,today:kst,snapshot,invoke,
+ saleSettlement:async date=>{const session=await check();return bankApi({action:'list',start:date,end:date},session);},
  receipt:async id=>{await check();const {data,error}=await db.from('mimine_stock_documents').select('image_data,raw_text').eq('id',id).abortSignal(AbortSignal.timeout(15000)).maybeSingle();if(error||!data)throw new Error(error?.message||'영수증을 찾지 못했어요.');return data;},
  legacy:(panel='more')=>{const url=new URL('legacy/index.html',location.href);url.hash='panel='+encodeURIComponent(panel);location.assign(url.href);},
  logout:async()=>{const{error}=await db.auth.signOut();if(error)throw new Error(error.message);location.replace(new URL('index.html',location.href).href);}};

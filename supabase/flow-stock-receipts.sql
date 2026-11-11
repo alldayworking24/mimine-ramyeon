@@ -57,9 +57,8 @@ begin
  select * into v_existing from public.mimine_stock_documents where id=p_request_id or (v_fingerprint is not null and fingerprint=v_fingerprint) limit 1;
  if found then return jsonb_build_object('id',v_existing.id,'duplicate',true,'total',v_existing.total);end if;
  for v_item in select value from jsonb_array_elements(v_items) loop
-  if coalesce(v_item->>'qty','') !~ '^\d+$' or coalesce(v_item->>'cost','') !~ '^\d+$' or coalesce(v_item->>'price','') !~ '^\d+$' then raise exception '수량·원가·판매가를 확인해 주세요.';end if;
+  if coalesce(v_item->>'qty','') !~ '^[0-9]+$' or coalesce(v_item->>'cost','') !~ '^[0-9]+$' or coalesce(v_item->>'price','') !~ '^[0-9]+$' then raise exception '수량·원가·판매가를 확인해 주세요.';end if;
   v_qty:=(v_item->>'qty')::integer;v_cost:=(v_item->>'cost')::bigint;v_price:=(v_item->>'price')::bigint;
-  if v_qty not between 0 and 100000 or (v_type<>'product' and v_qty=0) or v_cost not between 0 and 1000000000 or v_price not between 1 and 1000000000 then raise exception '수량·원가·판매가 범위를 확인해 주세요.';end if;
   v_expiry:=nullif(v_item->>'expiry','')::date;
   v_pid:=nullif(v_item->>'productId','')::bigint;
   v_name:=trim(coalesce(v_item->>'name',''));v_sku:=nullif(trim(coalesce(v_item->>'barcode','')),'');
@@ -69,6 +68,8 @@ begin
    select * into v_product from public.products where id=v_pid for update;
    if not found then raise exception '연결한 상품이 없습니다. 상품을 다시 선택해 주세요.';end if;
   end if;
+  if v_pid is not null and v_type<>'product' then v_category:=v_product.category;end if;
+  if v_qty not between 0 and 100000 or (v_type<>'product' and v_qty=0) or v_cost not between 0 and 1000000000 or v_price not between 0 and 1000000000 or (v_price=0 and coalesce(v_category,'') not in ('소모품','비품','청소용품','주방용품','포장용품','식재료')) then raise exception '수량·원가·판매가 범위를 확인해 주세요.';end if;
   if v_pid is null or v_type='product' then
    if v_name='' then raise exception '상품명을 입력해 주세요.';end if;
    if exists(select 1 from public.products p where (v_pid is null or p.id<>v_pid) and (p.name=v_name or (v_sku is not null and p.sku=v_sku))) then raise exception '같은 상품명 또는 바코드가 있습니다. 기존 상품을 선택해 주세요.';end if;

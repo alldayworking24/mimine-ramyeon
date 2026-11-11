@@ -23,9 +23,9 @@ function analyticalPeriodControl(){return`<section class="flow-period" aria-labe
 function todayTiles(){const s=saleOn(TODAY),c=sum(db.expenses.filter(e=>e.date===TODAY)),balance=(s?.amount||0)-c;return`<section class="today-tiles" aria-label="오늘 매출 비용 차이"><button class="today-tile metric-sales" data-action="home-entry" data-type="sale" aria-label="오늘 매출 ${won(s?.amount||0)} 등록 또는 수정"><span>오늘 매출${icon('plus')}</span><strong>${moneyMarkup(s?.amount||0)}</strong><small>${s?'눌러서 수정':'눌러서 등록'}</small></button><button class="today-tile metric-cost" data-action="home-entry" data-type="expense" aria-label="오늘 비용 ${won(c)} 등록"><span>오늘 비용${icon('plus')}</span><strong>${moneyMarkup(c)}</strong><small>눌러서 등록</small></button><div class="today-tile metric-balance ${changeTone(balance)}"><span>오늘 차이</span><strong>${moneyMarkup(balance)}</strong><small>매출 − 비용${balance<0?' · 비용 초과':''}</small></div></section>`;}
 function dailyRows(){
  const prior=priorBounds(),pd=prior&&flow.compare!=='year'?datesIn(...prior):[];
- const sales=new Map(),expenses=new Map();
- for(const row of db.sales)if(!sales.has(row.date))sales.set(row.date,row.amount);
- for(const row of db.expenses)expenses.set(row.date,(expenses.get(row.date)||0)+row.amount);
+ const index=typeof renderReadIndex!=='undefined'&&renderReadIndex;
+ const sales=index?new Map([...index.sales].map(([date,row])=>[date,row.amount])):new Map(),expenses=index?index.costs:new Map();
+ if(!index){for(const row of db.sales)if(!sales.has(row.date))sales.set(row.date,row.amount);for(const row of db.expenses)expenses.set(row.date,(expenses.get(row.date)||0)+row.amount);}
  return datesIn(flow.start,flow.end).map((date,i)=>{
   const future=date>TODAY,s=future?null:sales.get(date)??null,cost=future?null:expenses.get(date)||0;
   const previous=prior?sales.get(flow.compare==='year'?shiftedYear(date):pd[i])??null:null;

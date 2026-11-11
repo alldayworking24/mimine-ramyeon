@@ -31,7 +31,7 @@ function businessFilterVisual(value){return BUSINESS_LOGOS[value]?`<img class="b
 const ACTION_ICON_SPECS={
  'payment-settings':['calendar','납부일 설정'],'payment-add-rule':['plus','납부 항목 추가'],'payment-enter':['expense','비용 입력'],
  export:['download','내보내기','tile'], 'product-new':['packagePlus','상품 등록','tile'],
- 'barcode-open':['barcode','바코드'], 'barcode-camera':['camera','카메라'],
+ 'product-barcode-scan':['barcode','바코드 스캔으로 자동 입력'],'barcode-open':['barcode','바코드'], 'barcode-camera':['camera','카메라'],
  'receipt-open':['receipt','영수증'], 'receipt-history':['clock','입고 기록'],
  'receipt-add-item':['plus','품목 추가'], 'receipt-paste':['clipboard','직접 입력'],
  inbound:['packagePlus','입고'], 'product-edit':['edit','상품 수정'], 'adjust-stock':['stock','재고 조정'],
@@ -90,7 +90,7 @@ function applyMimineActionIcons(root=document){
  }
 }
 const renderBeforeActionIcons=render;
-render=function(){renderBeforeActionIcons();applyMimineActionIcons();};
+render=function(){renderBeforeActionIcons();applyMimineActionIcons($('#main'));};
 const sheetBeforeActionIcons=sheet;
 sheet=function(...args){sheetBeforeActionIcons(...args);applyMimineActionIcons($('#modal-root'));};
 applyMimineActionIcons();

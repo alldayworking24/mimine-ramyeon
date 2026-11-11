@@ -48,6 +48,10 @@ const payload={date,amount:1234,vendor:'검증 비용',category:'소모품',note
 await scalar('select mimine_save_expense($1,$2)',[id(10),payload]);
 assert.equal((await scalar('select mimine_save_expense($1,$2)',[id(10),payload])).duplicate,true);
 assert.equal(await scalar("select count(*)::int from expenses where amount=1234"),1);
+const supplyItem={name:'검증 주방세제',category:'청소용품',qty:1,cost:3000,price:0};
+const supplyResult=await receive(20,{type:'receipt',date,fingerprint:'store-supplies',supplier:'검증 마트',total:3000,items:[supplyItem],addExpense:false});
+assert.equal(await scalar('select sale_price::int from products where id=$1',[Number(supplyResult.items[0].productId)]),0);
+await assert.rejects(receive(21,{type:'product',date,items:[{name:'판매상품 0원 검증',category:'라면',qty:1,cost:100,price:0}]}),/판매가/);
 await db.exec("set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222'");
 await assert.rejects(receive(7,{type:'inbound',date,items:[{productId,qty:1,cost:100,price:1000}]}),/활성 사용자/);
 await db.exec('reset role;set role anon');

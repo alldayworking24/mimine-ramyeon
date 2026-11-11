@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const source=await readFile(new URL('../flow/stock-receipts.js',import.meta.url),'utf8');
+const c={db:{products:[{id:'p1',name:'신라면',category:'라면',price:4000}]},TODAY:'2026-11-11',num:v=>Math.max(0,Number(String(v).replaceAll(',',''))||0),uid:()=>Math.random().toString(),lastSellingPrice:p=>p.price};vm.createContext(c);vm.runInContext(source.slice(source.indexOf('const STORE_SUPPLY_CATEGORIES'),source.indexOf('async function receiptOcrImage')),c);
+const r=c.parserReceipt('상호: 행복생활마트\n사업자 123-45-67890\n2026.11.11\n상품명 단가 수량 금액\n신라면 810 2 1,620\n생수 500ml 500 2 1,000\n주방세제 3,000 1 3,000\n종이컵 100개 2,000 1 2,000\n행사할인 -500\n합계 7,120\n카드 결제 7,120');
+assert.equal(r.supplier,'행복생활마트');assert.equal(r.items.length,4);assert.equal(r.items[1].name,'생수 500ml');assert.equal(r.items[3].name,'종이컵 100개');assert.equal(r.items[2].category,'청소용품');assert.equal(r.items[3].category,'포장용품');assert.equal(r.items[0].productId,'p1');assert.equal(r.total,7120);assert.equal(r.unparsed[0],'행사할인 -500');
+const single=c.parserReceipt('상호: 동네철물\n상품명 금액\n가위 5,000\n합계 5,000');assert.equal(single.items[0].qty,1);assert.match(single.items[0].warning,/수량/);assert.equal(single.items[0].category,'주방용품');
+assert.equal(c.parserReceipt('사업자 123456\n전화 01012345678').supplier,'');
+assert.ok(vm.runInContext("isStoreSupply({category:'비품'})",c));assert.equal(vm.runInContext("isStoreSupply({category:'라면'})",c),false);
+assert.doesNotMatch(source,/imageFingerprint:fingerprint,supplier:''|imageFingerprint:'text:'\+receiptFingerprint\(text\),supplier:''/);
+console.log('Receipt: merchant extraction, no forced supplier reset, numeric names/units, general supplies, single-price review warning, discounts and totals passed.');

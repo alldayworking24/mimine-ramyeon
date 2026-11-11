@@ -1,7 +1,7 @@
 /* This adapter replaces every prototype write with an authenticated server operation. */
 let productionBusy=false,productionClosing=false,productionRevision=0;
 const productionBridge=window.MimineBridge;
-function productionCategories(){return[...new Set(['라면','컵라면','음료','토핑','기타',...db.products.map(p=>p.category)])];}
+function productionCategories(){return[...new Set(['라면','컵라면','음료','토핑','기타',...STORE_SUPPLY_CATEGORIES,...db.products.map(p=>p.category)])];}
 function requestId(){if(crypto.randomUUID)return crypto.randomUUID();const b=crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
 function preferenceSave(){try{localStorage.setItem('mimine-flow-preferences',JSON.stringify({goal:db.goal,largeType:!!db.settings.largeType}));}catch{}}
 persist=preferenceSave;
@@ -70,6 +70,10 @@ async function productionWrite(command,payload,message,after){
     const saved={card:0,cash:0,other:0,fee:0,due:'',settlementKnown:false,settlementConsistent:true,...old,...result.sale};
     if(result.warning&&old?.settlementKnown)saved.settlementConsistent=saved.card+saved.cash+saved.other===saved.amount;
     next={...db,sales:[...db.sales.filter(s=>s.date!==saved.date),saved].sort((a,b)=>b.date.localeCompare(a.date))};
+   }else if(command==='expense'&&result?.expense){
+    const saved=result.expense;next={...db,expenses:[...db.expenses.filter(e=>e.id!==saved.id),saved].sort((a,b)=>b.date.localeCompare(a.date)||Number(b.id)-Number(a.id))};
+   }else if(command==='delete'){
+    const key=payload.type==='sale'?'sales':'expenses';next={...db,[key]:db[key].filter(row=>String(row.remoteId||row.id)!==String(payload.id))};
    }else{
     const scope=command==='bank'?'bank':command==='payment-rules'?'settings':command==='stocktake'||(command==='stock'&&!payload.document?.addExpense)?'stock':['expense','delete','sale'].includes(command)?'finance':'all';
     next=await productionBridge.snapshot({scope,base:db});
@@ -104,13 +108,37 @@ renderBank=function(){
 openSettings=function(){sheet('설정·연결',`<div class="settings-row"><div><strong>큰 글씨</strong><small>글자를 조금 더 크게 표시합니다.</small></div><button class="switch" role="switch" aria-label="큰 글씨" aria-checked="${!!db.settings.largeType}" data-action="toggle-large"></button></div><div class="setting-buttons"><button class="secondary" data-action="production-refresh">${icon('refresh')}최신 내역 불러오기</button><button class="secondary" data-action="production-devices">${icon('bank')}입금 수신폰·연결 관리</button><button class="secondary" data-action="production-legacy">${icon('box')}상품 사진·분류·기존 관리</button><button class="secondary" data-action="export">${icon('download')}장부 CSV 내려받기</button><button class="danger-btn" data-action="production-logout">로그아웃</button></div><div class="settings-note">${productionBridge.isDemo?'미리보기 변경은 새로 열면 초기화됩니다.':'매출·비용·상품·입금은 서버에 저장합니다.'} 키오스크 매출 자동 수집과 상품별 판매 자동 차감은 연결되지 않았습니다.</div>`,'<button class="secondary" data-action="close-modal">닫기</button>',{name:'settings'});};
 openPayerRules=function(){sheet('입금자명 자동 등록',`<p class="supply-intro">문자에 표시된 이름을 사업에 연결합니다. 한 사업에 여러 입금자명을 등록할 수 있어요.</p><div class="payer-rule-form">${field('연결할 사업','<select name="business"><option value="mimine">미미네</option><option value="adw">하루온종일</option><option value="other">기타</option></select>')}${field('문자에 표시된 입금자명','<input name="payer" maxlength="100" placeholder="입금 문자에 나온 이름" required>')}${field('구분 메모 · 선택','<input name="label" maxlength="80">')}<button class="primary full" type="submit">입금자명 등록</button></div><h3 class="payer-list-heading">등록한 입금자명</h3><div class="payer-rule-list">${db.payerRules.map(r=>`<div class="payer-rule-row"><div><strong>${esc(r.payer)}</strong><small>${businessName(r.business)}${r.label?' · '+esc(r.label):''}</small></div><button type="button" class="rule-toggle ${r.active?'':'paused'}" data-action="toggle-payer-rule" data-id="${r.id}">${r.active?'사용 중지':'다시 사용'}</button></div>`).join('')||'<p class="field-note">등록한 입금자명이 없어요.</p>'}</div><p class="field-note spacer">새 입금은 이름이 일치하면 서버에서 자동 분류합니다. 정산일·금액까지 유일하게 맞으면 정산도 연결합니다. 하루온종일 업체에 연결된 이름은 미미네로 중복 등록하지 않습니다. 사용 중지해도 기존 내역은 유지합니다.</p>`,'<button type="button" class="secondary" data-action="close-modal">닫기</button>',{name:'payer-rules',form:'payer-rule-form'});};
 const productionOpenEntry=openEntry;
-openEntry=function(...args){productionOpenEntry(...args);modalContext.requestId=requestId();};
+openEntry=function(...args){productionOpenEntry(...args);modalContext.requestId=requestId();
+ if(modalContext.entryType==='sale'){
+  const form=$('#entry-form');void hydrateSalePayment(form,modalContext);
+  form.addEventListener('change',e=>{if(e.target.name==='date')void hydrateSalePayment(form,modalContext);});
+ }
+};
+async function hydrateSalePayment(form,context){
+ const date=form.elements.namedItem('date').value,old=saleOn(date);
+ context.paymentRead=(context.paymentRead||0)+1;const read=context.paymentRead;
+ const fields=[...form.querySelectorAll('#payment-split input')];
+ const current=()=>modalContext===context&&modalName==='entry'&&context.paymentRead===read&&form.elements.namedItem('date').value===date;
+ if(productionBridge.isDemo||!old||db.connection?.bankReady||(old.settlementReadAt&&Date.now()-old.settlementReadAt<60000)){context.paymentReady=true;fields.forEach(n=>n.disabled=false);syncSalePaymentCalculation(form);return;}
+ context.paymentReady=false;fields.forEach(n=>n.disabled=true);
+ const status=form.querySelector('#payment-auto-status');status.textContent='기존 결제정보를 확인하고 있어요.';
+ try{
+  const bank=await productionBridge.saleSettlement(date);if(!current())return;
+  const t=bank.settlements?.find(s=>s.sale_date===date);
+  for(const [name,key] of [['cash','cash_amount'],['other','other_amount'],['fee','fee_amount']])form.elements.namedItem(name).value=fmt(Number(t?.[key]||0));
+  form.elements.namedItem('due').value=t?.due_date||'';
+  db={...db,sales:db.sales.map(s=>s.date!==date?s:{...s,cash:Number(t?.cash_amount||0),other:Number(t?.other_amount||0),card:Number(t?.card_amount||0),fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementReadAt:Date.now()})};
+  fields.forEach(n=>n.disabled=false);context.paymentReady=true;syncSalePaymentCalculation(form);
+ }catch(error){if(!current())return;status.textContent='결제정보를 불러오지 못했어요. 창을 다시 열어 재시도해 주세요.';}
+}
+
 saveEntry=async function(form){
  const fd=new FormData(form),type=modalContext.entryType,date=String(fd.get('date')),amount=num(fd.get('entry-amount'));
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>TODAY)return showError('오늘까지의 날짜를 입력해 주세요.');
  if(amount>999999999||(type==='expense'&&amount<=0))return showError('금액 범위를 확인해 주세요.');
  if(type==='sale'){
   const old=saleOn(date);
+  if(modalContext.paymentReady===false)return showError('기존 결제정보를 확인한 뒤 저장해 주세요.');
   let settlement=null;
   if(modalContext.split){settlement={card:num(fd.get('card')),cash:num(fd.get('cash')),other:num(fd.get('other')),fee:num(fd.get('fee')),dueDate:String(fd.get('due')||''),note:String(fd.get('note')||'')};}
   else if(old?.settlementKnown){
@@ -127,15 +155,15 @@ const productionProductForm=openProductForm;
 openProductForm=function(...args){productionProductForm(...args);modalContext.requestId=requestId();};
 const productionInboundForm=openInbound;
 openInbound=function(...args){productionInboundForm(...args);modalContext.requestId=requestId();};
-saveProductSupply=async function(form){const fd=new FormData(form),item={productId:modalContext.productId||'',name:String(fd.get('name')||'').trim(),barcode:String(fd.get('barcode')||'').trim(),category:String(fd.get('category')),cost:num(fd.get('cost')),price:num(fd.get('price')),qty:modalContext.productId?0:num(fd.get('qty')),expiry:String(fd.get('expiry')||''),min:num(fd.get('min'))};if(!item.name||!item.price)return showError('상품명과 판매가를 입력해 주세요.');return productionWrite('stock',{requestId:modalContext.requestId,document:{type:'product',date:TODAY,supplier:String(fd.get('supplier')||''),items:[item],addExpense:false}},'상품을 저장했어요. 다음 입고에 이 판매가를 불러옵니다.');};
-saveInboundSupply=async function(form){const fd=new FormData(form),item={productId:modalContext.productId,qty:num(fd.get('qty')),cost:num(fd.get('cost')),price:num(fd.get('price')),expiry:String(fd.get('expiry')||'')};if(!item.qty||!item.price)return showError('수량과 판매가를 입력해 주세요.');return productionWrite('stock',{requestId:modalContext.requestId,document:{type:'inbound',date:String(fd.get('date')),supplier:String(fd.get('supplier')||''),items:[item],addExpense:fd.get('addExpense')==='on'}},'입고와 직전 판매가를 서버에 저장했어요.');};
+saveProductSupply=async function(form){const fd=new FormData(form),item={productId:modalContext.productId||'',name:String(fd.get('name')||'').trim(),barcode:String(fd.get('barcode')||'').trim(),category:String(fd.get('category')),cost:num(fd.get('cost')),price:num(fd.get('price')),qty:modalContext.productId?0:num(fd.get('qty')),expiry:String(fd.get('expiry')||''),min:num(fd.get('min'))};if(!item.name||(!isStoreSupply(item)&&!item.price))return showError('상품명과 판매 상품의 판매가를 입력해 주세요.');return productionWrite('stock',{requestId:modalContext.requestId,document:{type:'product',date:TODAY,supplier:String(fd.get('supplier')||''),items:[item],addExpense:false}},'상품을 저장했어요. 다음 입고에 이 판매가를 불러옵니다.');};
+saveInboundSupply=async function(form){const fd=new FormData(form),item={productId:modalContext.productId,qty:num(fd.get('qty')),cost:num(fd.get('cost')),price:num(fd.get('price')),expiry:String(fd.get('expiry')||'')};if(!item.qty||(!isStoreSupply(db.products.find(p=>p.id===item.productId)||{})&&!item.price))return showError('수량과 판매 상품의 판매가를 입력해 주세요.');return productionWrite('stock',{requestId:modalContext.requestId,document:{type:'inbound',date:String(fd.get('date')),supplier:String(fd.get('supplier')||''),items:[item],addExpense:fd.get('addExpense')==='on'}},'입고와 직전 판매가를 서버에 저장했어요.');};
 saveReceiptImport=async function(){
  syncReceiptFields();const r=supply.receipt,t=receiptReviewTotal();if(!t.items.length)return showError('입고할 품목을 선택해 주세요.');
- for(const i of t.items)if(!i.name.trim()||!Number.isInteger(i.qty)||i.qty<1||!i.salePrice||!i.unitCost)return showError('상품명·원가·판매가·수량을 확인해 주세요.');
+ for(const i of t.items)if(!i.name.trim()||!Number.isInteger(i.qty)||i.qty<1||(!isStoreSupply(i)&&!i.salePrice)||!i.unitCost)return showError('상품명·원가·판매가·수량을 확인해 주세요.');
  const total=num($('#receipt-grand-total').value);if(!total)return showError('영수증 합계를 확인해 주세요.');
  if(total!==t.total&&!$('#receipt-adjustment-ok').checked)return showError('상품 합계와 영수증 합계 차이를 확인해 주세요.');
  r.requestId??=requestId();
- return productionWrite('stock',{requestId:r.requestId,document:{type:'receipt',date:r.date,supplier:r.supplier,total,adjustmentConfirmed:$('#receipt-adjustment-ok').checked,addExpense:$('#receipt-add-expense').checked,fingerprint:r.imageFingerprint,imageData:r.imageData,rawText:r.rawText,items:t.items.map(i=>({productId:i.productId,name:i.name,cost:i.unitCost,price:i.salePrice,qty:i.qty,expiry:i.expiry,category:'기타',min:10}))}},`${t.items.length}종 ${t.qty}개 입고를 저장했어요.`,()=>supply.receipt=null);
+ return productionWrite('stock',{requestId:r.requestId,document:{type:'receipt',date:r.date,supplier:r.supplier,total,adjustmentConfirmed:$('#receipt-adjustment-ok').checked,addExpense:$('#receipt-add-expense').checked,fingerprint:r.imageFingerprint,imageData:r.imageData,rawText:r.rawText,items:t.items.map(i=>({productId:i.productId,name:i.name,cost:i.unitCost,price:i.salePrice,qty:i.qty,expiry:i.expiry,category:i.category||'기타',min:isStoreSupply(i)?0:10}))}},`${t.items.length}종 ${t.qty}개 입고를 저장했어요.`,()=>supply.receipt=null);
 };
 saveMatch=async function(form){const fd=new FormData(form),s=db.sales.find(s=>s.id===modalContext.saleId),e=db.events.find(e=>e.id===fd.get('match-event')),amount=num(fd.get('match-amount'));if(!e||!s||e.excluded||!amount)return showError('입금·금액을 확인해 주세요.');return productionWrite('bank',{action:'allocate',eventId:e.id,saleDate:s.date,amount:amount+sum(db.links.filter(l=>l.eventId===e.id&&l.saleId===s.id))},'정산을 연결했어요.');};
 restoreDeposit=async function(id){return productionWrite('bank',{action:'exclude',eventId:id,excluded:false},'대상 제외를 해제했어요. 과거 정산 연결은 자동 복구하지 않습니다.');};
