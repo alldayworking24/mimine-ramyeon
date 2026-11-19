@@ -12,7 +12,7 @@ const a=app.slice(app.indexOf(' const saleBody='),app.indexOf(' const entryCateg
 // Slow responses must not write into another date/dialog, and saving is blocked while unknown.
 let resolve;const paymentFields=[{disabled:false}],inputs={date:{value:'2026-11-11'},cash:{value:'0'},other:{value:'0'},fee:{value:'0'},due:{value:''}};const ctx={};
 Object.assign(c,{modalContext:ctx,modalName:'entry',saleOn:()=>({id:'s1'}),db:{sales:[{id:'s1',date:'2026-11-11',amount:24700}],connection:{bankReady:false}},productionBridge:{isDemo:false,saleSettlement:()=>new Promise(r=>resolve=r)},syncSalePaymentCalculation:()=>{},});
-vm.runInContext(runtime.slice(runtime.indexOf('async function hydrateSalePayment'),runtime.indexOf('saveEntry=async function')),c);
+vm.runInContext(runtime.slice(runtime.indexOf('function hydrateSalePayment'),runtime.indexOf('saveEntry=async function')),c);
 const payForm={elements:{namedItem:n=>inputs[n]},querySelectorAll:()=>paymentFields,querySelector:()=>note};
 const pending=c.hydrateSalePayment(payForm,ctx);assert.equal(ctx.paymentReady,false);assert.equal(paymentFields[0].disabled,true);resolve({settlements:[{sale_date:'2026-11-11',cash_amount:2000,other_amount:0,fee_amount:100,due_date:'2026-11-13'}]});await pending;assert.equal(inputs.cash.value,'2,000');assert.equal(ctx.paymentReady,true);assert.equal(paymentFields[0].disabled,false);
 const late=c.hydrateSalePayment(payForm,ctx);c.modalContext={};resolve({settlements:[{sale_date:'2026-11-11',cash_amount:9999}]});await late;assert.equal(inputs.cash.value,'2,000');

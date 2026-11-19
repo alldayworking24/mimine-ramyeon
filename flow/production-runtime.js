@@ -114,25 +114,44 @@ openEntry=function(...args){productionOpenEntry(...args);modalContext.requestId=
   form.addEventListener('change',e=>{if(e.target.name==='date')void hydrateSalePayment(form,modalContext);});
  }
 };
-async function hydrateSalePayment(form,context){
+function hydrateSalePayment(form,context){
+ const pending=loadSalePayment(form,context);context.paymentPromise=pending;return pending;
+}
+async function loadSalePayment(form,context){
  const date=form.elements.namedItem('date').value,old=saleOn(date);
  context.paymentRead=(context.paymentRead||0)+1;const read=context.paymentRead;
  const fields=[...form.querySelectorAll('#payment-split input')];
  const current=()=>modalContext===context&&modalName==='entry'&&context.paymentRead===read&&form.elements.namedItem('date').value===date;
- if(productionBridge.isDemo||!old||db.connection?.bankReady||(old.settlementReadAt&&Date.now()-old.settlementReadAt<60000)){context.paymentReady=true;fields.forEach(n=>n.disabled=false);syncSalePaymentCalculation(form);return;}
+ if(productionBridge.isDemo||!old||db.connection?.bankReady||(old.settlementReadAt&&Date.now()-old.settlementReadAt<60000)){context.paymentReady=true;fields.forEach(n=>n.disabled=false);syncSalePaymentCalculation(form);return true;}
  context.paymentReady=false;fields.forEach(n=>n.disabled=true);
- const status=form.querySelector('#payment-auto-status');status.textContent='기존 결제정보를 확인하고 있어요.';
+ const status=form.querySelector('#payment-auto-status');
+ const setStatus=message=>{if(status){status.textContent=message;const retry=document.createElement('button');retry.type='button';retry.className='text-button';retry.textContent='결제정보 다시 확인';retry.dataset.action='entry-payment-retry';status.appendChild(retry);}};
+ if(status)status.textContent='기존 결제정보를 확인하고 있어요. 저장을 누르면 확인 후 이어서 저장합니다.';
  try{
-  const bank=await productionBridge.saleSettlement(date);if(!current())return;
-  const t=bank.settlements?.find(s=>s.sale_date===date);
+  const bank=await productionBridge.saleSettlement(date);if(!current())return false;
+  if(!bank||!Array.isArray(bank.settlements))throw new Error('결제정보 응답을 확인하지 못했습니다.');
+  const t=bank.settlements.find(s=>s.sale_date===date);
   for(const [name,key] of [['cash','cash_amount'],['other','other_amount'],['fee','fee_amount']])form.elements.namedItem(name).value=fmt(Number(t?.[key]||0));
   form.elements.namedItem('due').value=t?.due_date||'';
   db={...db,sales:db.sales.map(s=>s.date!==date?s:{...s,cash:Number(t?.cash_amount||0),other:Number(t?.other_amount||0),card:Number(t?.card_amount||0),fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementReadAt:Date.now()})};
-  fields.forEach(n=>n.disabled=false);context.paymentReady=true;syncSalePaymentCalculation(form);
- }catch(error){if(!current())return;status.textContent='결제정보를 불러오지 못했어요. 창을 다시 열어 재시도해 주세요.';}
+  fields.forEach(n=>n.disabled=false);context.paymentReady=true;
+  if(status)status.textContent='';const error=form.querySelector('#form-error');if(error)error.textContent='';
+  syncSalePaymentCalculation(form);return true;
+ }catch(error){if(!current())return false;context.paymentError=error.message||'조회 실패';setStatus('결제정보를 불러오지 못했습니다. 입력한 총매출은 유지됩니다. ');return false;}
 }
 
 saveEntry=async function(form){
+ const context=modalContext,dateBefore=form.elements?.namedItem('date')?.value;
+ if(context.entryType==='sale'&&context.paymentReady===false){
+  if(context.paymentSaveWaiting)return false;context.paymentSaveWaiting=true;
+  try{
+   await(context.paymentPromise||hydrateSalePayment(form,context));
+   if(modalContext!==context||modalName!=='entry'||form.elements.namedItem('date').value!==dateBefore)return false;
+   if(context.paymentReady===false)await hydrateSalePayment(form,context);
+   if(modalContext!==context||modalName!=='entry'||form.elements.namedItem('date').value!==dateBefore)return false;
+   if(context.paymentReady===false)return showError('결제정보 조회에 실패해 아직 저장하지 않았습니다. 아래 ‘결제정보 다시 확인’을 눌러 주세요.');
+  }finally{context.paymentSaveWaiting=false;}
+ }
  const fd=new FormData(form),type=modalContext.entryType,date=String(fd.get('date')),amount=num(fd.get('entry-amount'));
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>TODAY)return showError('오늘까지의 날짜를 입력해 주세요.');
  if(amount>999999999||(type==='expense'&&amount<=0))return showError('금액 범위를 확인해 주세요.');
@@ -191,6 +210,7 @@ action=function(el){
  const{action:a,id}=el.dataset;
  if(productionBusy)return;
  switch(a){
+ case'entry-payment-retry':{if(modalName==='entry'&&!modalContext.paymentSaveWaiting)void hydrateSalePayment($('#entry-form'),modalContext);return;}
  case'production-refresh':{const settingsOpen=modalName==='settings';closeModal();void refreshProduction(false,settingsOpen?'all':view.page==='bank'?'bank':view.page==='products'?'stock':'settings');return;}
  case'production-devices':closeModal();productionBridge.legacy('devices');return;
  case'production-legacy':closeModal();productionBridge.legacy('products');return;
