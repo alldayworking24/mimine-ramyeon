@@ -15,6 +15,8 @@ Object.assign(iconPaths,{
  ban:'<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
  undo:'<path d="m8 4-5 5 5 5M3 9h10a7 7 0 0 1 0 14"/>',
  compare:'<path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/>',
+ reviewChecklist:'<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 11 1 1 2-2M13 11h3m-8 6 1 1 2-2M13 17h3"/>',
+ allDocuments:'<rect x="4" y="5" width="14" height="17" rx="2"/><path d="M8 2h10a3 3 0 0 1 3 3v13M8 10h6M8 14h6M8 18h6"/>',
  filter:'<path d="M4 5h16l-6 7v7l-4 2v-9L4 5Z"/>',
  card:'<rect x="2" y="5" width="20" height="15" rx="3"/><path d="M2 10h20M6 15h3M12 15h2"/>',
  list:'<path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1"/>',
@@ -68,7 +70,8 @@ function buttonIconSpec({action='',value='',text='',type='',className='',formId=
  if(action==='annual-metric')return{icon:value==='cost'?'expense':value==='balance'?'chart':'sales',label:text,variant:'filter'};
  if(action==='product-filter')return{icon:value==='low'?'alert':value==='expiry'?'clock':'box',label:text,variant:'filter'};
  if(action==='bank-tab')return{icon:value==='compare'?'card':'bank',label:text,variant:'inline'};
- if(['bank-filter','bank-scope'].includes(action))return{icon:'filter',label:text,variant:'filter'};
+ if(action==='bank-scope')return{icon:value==='active'?'reviewChecklist':value==='excluded'?'ban':'allDocuments',label:text,variant:'filter'};
+ if(action==='bank-filter')return{icon:'filter',label:text,variant:'filter'};
  const spec=ACTION_ICON_SPECS[action];return spec?{icon:spec[0],label:spec[1]||text,variant:spec[2]||'inline'}:null;
 }
 function applyMimineActionIcons(root=document){

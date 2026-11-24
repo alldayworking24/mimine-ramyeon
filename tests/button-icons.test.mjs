@@ -26,3 +26,7 @@ assert.equal(vm.runInContext("businessFilterVisual('mimine').includes('<img')&&b
 assert.equal(vm.runInContext("businessFilterVisual('unclassified')===icon('unclassified')",c),true);
 assert.equal(vm.runInContext("businessFilterVisual('all')===icon('businessAll')",c),true);
 console.log('Unified controls: identical period icons, icon-only entry submit and branded/unclassified business filters passed.');
+
+assert.equal(spec({action:'bank-scope',value:'active',text:'확인 대상 78'}).icon,'reviewChecklist');
+assert.equal(spec({action:'bank-scope',value:'excluded',text:'대상 제외 6'}).icon,'ban');
+assert.equal(spec({action:'bank-scope',value:'all',text:'전체 84'}).icon,'allDocuments');

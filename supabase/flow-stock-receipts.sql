@@ -49,7 +49,7 @@ begin
  if p_request_id is null or v_type not in ('receipt','inbound','product') or v_type is null then raise exception '입고 요청을 확인해 주세요.';end if;
  if jsonb_typeof(v_items) is distinct from 'array' or jsonb_array_length(v_items) not between 1 and 100 then raise exception '입고할 품목은 1~100개입니다.';end if;
  v_date:=(p_document->>'date')::date;
- if v_date is null or v_date>(now() at time zone 'Asia/Seoul')::date then raise exception '입고일을 확인해 주세요.';end if;
+ if v_date is null then raise exception '입고일을 확인해 주세요.';end if;
  if length(v_supplier)>80 or length(v_raw)>60000 or octet_length(v_image)>500000 then raise exception '영수증 크기 또는 구매처를 확인해 주세요.';end if;
  if v_image<>'' and v_image !~ '^data:image/(jpeg|png);base64,[A-Za-z0-9+/=]+$' then raise exception '지원하는 영수증 사진이 아닙니다.';end if;
  if v_fingerprint is not null and length(v_fingerprint)>200 then raise exception '영수증 정보를 확인해 주세요.';end if;
@@ -130,7 +130,7 @@ begin
  select * into v_existing from public.mimine_finance_requests where id=p_request_id;
  if found then return jsonb_build_object('id',v_existing.expense_id,'duplicate',true);end if;
  v_amount:=(p_expense->>'amount')::bigint;v_date:=(p_expense->>'date')::date;
- if v_amount is null or v_amount not between 1 and 10000000000 or v_date is null or v_date>(now() at time zone 'Asia/Seoul')::date or length(trim(coalesce(p_expense->>'vendor','')))=0 then raise exception '날짜·금액·사용처를 확인해 주세요.';end if;
+ if v_amount is null or v_amount not between 1 and 10000000000 or v_date is null or length(trim(coalesce(p_expense->>'vendor','')))=0 then raise exception '날짜·금액·사용처를 확인해 주세요.';end if;
  if nullif(p_expense->>'id','') is not null then
   update public.expenses set expense_date=v_date,category=coalesce(nullif(p_expense->>'category',''),'기타'),amount=v_amount,vendor=p_expense->>'vendor',memo=nullif(p_expense->>'note',''),updated_at=now() where id=(p_expense->>'id')::bigint returning id into v_id;
   if not found then raise exception '수정할 비용 내역이 없습니다.';end if;

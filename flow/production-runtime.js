@@ -46,7 +46,7 @@ function refreshProduction(silent=false,scope='all'){
    const next=await productionBridge.snapshot({scope,base:db});
    if(revision!==productionRevision||productionBusy||modalName)return false;
    if(scope==='finance'||scope==='all')lastFinanceRefresh=Date.now();
-   if(scope==='bank'||scope==='all')lastBankRefresh=Date.now();
+   if((scope==='bank'||scope==='all')&&!next.connection?.bankError)lastBankRefresh=Date.now();
    // Background data must not disturb typing or rebuild an unrelated page.
    db=mergeProductionRead(next,scope);if(scope==='all'||(scope==='finance'&&['today','ledger','reports'].includes(view.page))||(scope==='settings'&&view.page==='today')||(scope==='stock'&&view.page==='products')||(scope==='bank'&&view.page==='bank'))render();
    if(!silent)toast('최신 내역을 불러왔어요.');
@@ -75,7 +75,7 @@ async function productionWrite(command,payload,message,after){
    }else if(command==='delete'){
     const key=payload.type==='sale'?'sales':'expenses';next={...db,[key]:db[key].filter(row=>String(row.remoteId||row.id)!==String(payload.id))};
    }else{
-    const scope=command==='bank'?'bank':command==='payment-rules'?'settings':command==='stocktake'||(command==='stock'&&!payload.document?.addExpense)?'stock':['expense','delete','sale'].includes(command)?'finance':'all';
+    const scope=command==='bank'?'bank':command==='payment-rules'?'settings':['stocktake','stocktake-review','batch-expiry'].includes(command)||(command==='stock'&&!payload.document?.addExpense)?'stock':['expense','delete','sale'].includes(command)?'finance':'all';
     next=await productionBridge.snapshot({scope,base:db});
    }
   }
@@ -101,9 +101,9 @@ render=function(){
 const productionBankRender=renderBank;
 renderBank=function(){
  if(!productionBridge.isDemo&&!db.connection?.bankReady&&!db.connection?.bankError)return heading('BANK','통장 입금','입금 내역을 불러오고 있어요.')+'<button class="secondary" data-action="production-refresh">다시 불러오기</button>';
- if(db.connection?.bankError)return heading('BANK','통장 입금','연결 상태를 확인해 주세요.')+`<section class="list-card production-bank-error"><h2>입금내역을 불러오지 못했어요.</h2><p>${esc(db.connection.bankError)}</p><button class="primary" data-action="production-refresh">다시 불러오기</button><button class="secondary" data-action="production-devices">수신폰·연결 관리</button></section>`;
+ if(db.connection?.bankError&&!db.connection?.bankReady)return heading('BANK','통장 입금','연결 상태를 확인해 주세요.')+`<section class="list-card production-bank-error"><h2>입금내역을 불러오지 못했어요.</h2><p>${esc(db.connection.bankError)}</p><button class="primary" data-action="production-refresh">다시 불러오기</button><button class="secondary" data-action="production-devices">수신폰·연결 관리</button></section>`;
  const bankNote=productionBridge.isDemo?'미리보기용 가상 입금입니다. 실제 입금 자동 수신은 운영 서버 연결 후 사용할 수 있습니다.':'하루온종일의 실제 문자 수신 내역입니다. 수신폰 전달이 작동하는 동안 앱을 닫아도 서버에 저장됩니다. 화면은 60초마다 갱신합니다. 최근 5년 범위에서 조회합니다.';
- return productionBankRender().replace('이 목업은 수신 체험 데이터로 동작합니다. 실제 자동 수신은 하루온종일의 문자 수신 서버 연결이 필요합니다.',bankNote).replace(/<button class="text-button" data-action="sms-demo">[\s\S]*?<\/button>/,'<button class="text-button" data-action="production-refresh">새로고침</button>');
+ return (db.connection?.bankError?'<div class="production-notice" role="status">최신 입금 갱신에 실패했습니다. 마지막 조회 내역을 표시합니다. <button class="text-button" data-action="production-refresh">다시 시도</button></div>':'')+productionBankRender().replace('이 목업은 수신 체험 데이터로 동작합니다. 실제 자동 수신은 하루온종일의 문자 수신 서버 연결이 필요합니다.',bankNote).replace(/<button class="text-button" data-action="sms-demo">[\s\S]*?<\/button>/,'<button class="text-button" data-action="production-refresh">새로고침</button>');
 };
 openSettings=function(){sheet('설정·연결',`<div class="settings-row"><div><strong>큰 글씨</strong><small>글자를 조금 더 크게 표시합니다.</small></div><button class="switch" role="switch" aria-label="큰 글씨" aria-checked="${!!db.settings.largeType}" data-action="toggle-large"></button></div><div class="setting-buttons"><button class="secondary" data-action="production-refresh">${icon('refresh')}최신 내역 불러오기</button><button class="secondary" data-action="production-devices">${icon('bank')}입금 수신폰·연결 관리</button><button class="secondary" data-action="production-legacy">${icon('box')}상품 사진·분류·기존 관리</button><button class="secondary" data-action="export">${icon('download')}장부 CSV 내려받기</button><button class="danger-btn" data-action="production-logout">로그아웃</button></div><div class="settings-note">${productionBridge.isDemo?'미리보기 변경은 새로 열면 초기화됩니다.':'매출·비용·상품·입금은 서버에 저장합니다.'} 키오스크 매출 자동 수집과 상품별 판매 자동 차감은 연결되지 않았습니다.</div>`,'<button class="secondary" data-action="close-modal">닫기</button>',{name:'settings'});};
 openPayerRules=function(){sheet('입금자명 자동 등록',`<p class="supply-intro">문자에 표시된 이름을 사업에 연결합니다. 한 사업에 여러 입금자명을 등록할 수 있어요.</p><div class="payer-rule-form">${field('연결할 사업','<select name="business"><option value="mimine">미미네</option><option value="adw">하루온종일</option><option value="other">기타</option></select>')}${field('문자에 표시된 입금자명','<input name="payer" maxlength="100" placeholder="입금 문자에 나온 이름" required>')}${field('구분 메모 · 선택','<input name="label" maxlength="80">')}<button class="primary full" type="submit">입금자명 등록</button></div><h3 class="payer-list-heading">등록한 입금자명</h3><div class="payer-rule-list">${db.payerRules.map(r=>`<div class="payer-rule-row"><div><strong>${esc(r.payer)}</strong><small>${businessName(r.business)}${r.label?' · '+esc(r.label):''}</small></div><button type="button" class="rule-toggle ${r.active?'':'paused'}" data-action="toggle-payer-rule" data-id="${r.id}">${r.active?'사용 중지':'다시 사용'}</button></div>`).join('')||'<p class="field-note">등록한 입금자명이 없어요.</p>'}</div><p class="field-note spacer">새 입금은 이름이 일치하면 서버에서 자동 분류합니다. 정산일·금액까지 유일하게 맞으면 정산도 연결합니다. 하루온종일 업체에 연결된 이름은 미미네로 중복 등록하지 않습니다. 사용 중지해도 기존 내역은 유지합니다.</p>`,'<button type="button" class="secondary" data-action="close-modal">닫기</button>',{name:'payer-rules',form:'payer-rule-form'});};
@@ -153,7 +153,8 @@ saveEntry=async function(form){
   }finally{context.paymentSaveWaiting=false;}
  }
  const fd=new FormData(form),type=modalContext.entryType,date=String(fd.get('date')),amount=num(fd.get('entry-amount'));
- if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>TODAY)return showError('오늘까지의 날짜를 입력해 주세요.');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return showError('날짜를 입력해 주세요.');
+ if(type==='sale'&&date>TODAY)return showError('매출은 오늘까지의 날짜를 입력해 주세요.');
  if(amount>999999999||(type==='expense'&&amount<=0))return showError('금액 범위를 확인해 주세요.');
  if(type==='sale'){
   const old=saleOn(date);
@@ -168,7 +169,8 @@ saveEntry=async function(form){
   view.date=date;return productionWrite('sale',{date,amount,note:String(fd.get('note')||''),settlement,verifySettlement:!!old&&!productionBridge.isDemo&&!db.connection?.bankReady,previousAmount:old?.amount},'매출을 서버에 저장했어요.');
  }
  const vendor=String(fd.get('vendor')||'').trim();if(!vendor)return showError('사용처나 내용을 입력해 주세요.');
- return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:paymentComposeNote(fd.get('note'),fd.get('payment-link'))},'비용을 서버에 저장했어요.');
+ if(fd.get('expense-status')==='paid'&&date>TODAY)return showError('납부 완료일은 오늘까지 입력하세요. 미래 지출은 예정으로 등록해 주세요.');
+ return productionWrite('expense',{requestId:modalContext.requestId,id:modalContext.id||'',date,amount,category:String(fd.get('category')||'기타'),vendor,note:expenseComposeNote(paymentComposeNote(fd.get('note'),fd.get('payment-link')),String(fd.get('expense-status')||'paid'),String(fd.get('expense-kind')||'operating'))},'비용을 서버에 저장했어요.');
 };
 const productionProductForm=openProductForm;
 openProductForm=function(...args){productionProductForm(...args);modalContext.requestId=requestId();};

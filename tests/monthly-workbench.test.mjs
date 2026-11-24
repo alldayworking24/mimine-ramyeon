@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
+const c={console,Date,Intl,Map,Set,URL,URLSearchParams,structuredClone,productionToday:'2026-11-03',location:{hash:'',href:'https://example.test/'},localStorage:{getItem:()=>null},window:{},document:{addEventListener(){}}};
+vm.createContext(c);vm.runInContext(await read('flow/preview-provider.js'),c);c.productionSnapshot=await vm.runInContext('createMiminePreviewProvider().snapshot()',c);
+const app=await read('flow/app.js');vm.runInContext(app.slice(0,app.indexOf("document.addEventListener('click'")),c);
+const analytics=await read('flow/analytics.js');vm.runInContext(analytics.slice(0,analytics.indexOf('renderToday=()=>')),c);
+const interactions=await read('flow/interactions.js');vm.runInContext(interactions.slice(0,interactions.indexOf('const bankBeforeExclusion=')),c);
+vm.runInContext('render=()=>{}',c);vm.runInContext(await read('flow/annual-reports.js'),c);
+const run=s=>vm.runInContext(s,c),plain=x=>JSON.parse(JSON.stringify(x));
+c.productionBridge={isDemo:true};vm.runInContext(await read('flow/monthly-workbench.js'),c);
+
+run("db.sales=[{date:'2026-11-01',amount:300},{date:'2026-11-02',amount:0},{date:'2026-10-01',amount:200},{date:'2025-11-01',amount:100}];db.expenses=[{id:'1',date:'2026-11-02',amount:40,vendor:'A'},{id:'2',date:'2026-11-02',amount:50,vendor:'B',paymentStatus:'planned'},{id:'3',date:'2026-11-02',amount:60,vendor:'C',expenseKind:'transfer'},{id:'4',date:'2026-11-02',amount:40,vendor:'A'}]");
+const d=plain(run('monthReviewData()'));assert.equal(d.total,300);assert.equal(d.avg,100);assert.equal(d.cost,80);assert.equal(d.plannedTotal,50);assert.deepEqual(d.missing,['2026-11-03']);assert.equal(d.duplicateGroups.length,1);
+assert.equal(run("sameElapsedComparison('2026-11',-1).end"),'2026-10-03');
+assert.equal(run("sameElapsedComparison('2026-03',-1).end"),'2026-02-28');
+assert.equal(run("monthReviewData('2026-12').avg"),null);
+const calendar=run('monthlyCalendarPanel()');assert.match(calendar,/미입력/);assert.match(calendar,/0원/);assert.match(calendar,/예정/);assert.equal((calendar.match(/class="calendar-cell/g)||[]).length,30);assert.match(calendar,/data-action="month-edit"/);
+assert.match(run('renderToday()'),/monthly-workbench/);assert.match(run('monthlyClosePanel()'),/中|중복 의심 비용/);
+const csv=run('monthlyCsv()');assert.match(csv,/대금 납부/);assert.match(csv,/예정/);assert.match(csv,/2026-11-01/);
+run("monthView.month='2026-02'");assert.equal(run('monthReviewData().dates.length'),28);assert.equal((run('monthlyCalendarPanel()').match(/class="calendar-cell/g)||[]).length,28);
+const weekly=plain(run("monthlyWeekdayStats('2026-11')"));assert.equal(weekly.find(r=>r.label==='월').count,1);assert.equal(weekly.find(r=>r.label==='월').avg,0);
+console.log('Monthly workbench: month bounds, missing/zero/future, elapsed comparison clamp, scheduled/transfer cost exclusions, duplicates, calendar and CSV passed.');

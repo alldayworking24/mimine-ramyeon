@@ -1,7 +1,7 @@
 /* Payment summaries are derived from real expense entries, never bank debit claims. */
 const paymentUi={index:0,paused:false,timer:null};
 function paymentConfig(){
- const rules=db.paymentRulesConfigured?db.paymentRules:paymentInferredRules(db.expenses.filter(e=>e.date<=TODAY));
+ const rules=db.paymentRulesConfigured?db.paymentRules:paymentInferredRules(db.expenses.filter(e=>e.paymentStatus!=='planned'&&e.date<=TODAY));
  return paymentValidateConfig({rules,closedDays:db.paymentClosedDays||[]});
 }
 let paymentCache;

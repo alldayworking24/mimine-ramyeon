@@ -56,3 +56,11 @@ assert.deepEqual(reads,['products','product_categories','product_purchase_batche
 assert.equal(stockOnly.sales[0].card,90000);
 assert.equal(stockOnly.events.length,1);
 console.log('Scoped bootstrap and page reads preserve existing financial state without unrelated requests.');
+
+bankFailure=true;
+const retained=await bridge.snapshot({scope:'bank',base:bankOnly});
+assert.equal(retained.connection.bankReady,true);
+assert.match(retained.connection.bankError,/은행 서버 오류/);
+assert.equal(retained.events[0].id,bankOnly.events[0].id);
+assert.equal(retained.links.length,bankOnly.links.length);
+console.log('Failed refresh retains previously loaded bank records and ready state.');

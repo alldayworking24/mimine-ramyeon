@@ -49,7 +49,7 @@ function paymentInferredRules(expenses){
 }
 function paymentTag(ruleId,ym){return '[미미네납부:'+ruleId+':'+ym+']';}
 function paymentExtractTag(note){return String(note||'').match(/\[미미네납부:([a-zA-Z0-9_-]+):(\d{4}-\d{2})\]/)?.[0]||'';}
-function paymentCleanNote(note){return String(note||'').replace(/\[미미네납부:[a-zA-Z0-9_-]+:\d{4}-\d{2}\]/g,'').trim();}
+function paymentCleanNote(note){return String(note||'').replace(/\[미미네지출:(planned|paid):(operating|transfer)\]/g,'').replace(/\[미미네납부:[a-zA-Z0-9_-]+:\d{4}-\d{2}\]/g,'').trim();}
 function paymentComposeNote(note,link){const clean=paymentCleanNote(note),tag=paymentExtractTag(link);return clean+(tag?(clean?'\n':'')+tag:'');}
 function paymentRuleMatches(rule,expense){
  if(rule.type==='rent')return expense.category==='임대료';
@@ -64,7 +64,7 @@ function paymentInstances(config,expenses,today){
  }));
  for(const rule of normalized.rules.filter(r=>r.active)){
   const instances=all.filter(i=>i.rule.id===rule.id);
-  for(const e of expenses.filter(e=>e.date<=today&&Number(e.amount)>0&&paymentRuleMatches(rule,e))){
+  for(const e of expenses.filter(e=>e.paymentStatus!=='planned'&&e.date<=today&&Number(e.amount)>0&&paymentRuleMatches(rule,e))){
    const tag=String(e.paymentLink||e.note||'').match(/\[미미네납부:([a-zA-Z0-9_-]+):(\d{4}-\d{2})\]/);
    let target;
    if(tag){target=instances.find(i=>i.rule.id===tag[1]&&i.month===tag[2]);}
@@ -85,3 +85,7 @@ function paymentVisibleInstances(config,expenses,today){
  if(!current.some(i=>i.status!=='paid'))current.push(...all.filter(i=>i.month>ym).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,2));
  return current;
 }
+
+// Reserved memo metadata keeps compatibility with the existing expense RPC.
+function expenseMetadata(note){const m=String(note||'').match(/\[미미네지출:(planned|paid):(operating|transfer)\]/);return m?{paymentStatus:m[1],expenseKind:m[2]}:{};}
+function expenseComposeNote(note,status,kind){return String(note||'').replace(/\[미미네지출:(planned|paid):(operating|transfer)\]/g,'').trim()+'\n[미미네지출:'+status+':'+kind+']';}

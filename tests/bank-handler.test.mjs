@@ -40,3 +40,20 @@ assert.equal((await handler(req({action:'alias',payer:'입금자',business:'bad'
 assert.equal((await handler(req({action:'exclude',eventId:'bad',excluded:true}))).status,400);
 assert.equal((await handler(req({action:'exclude',eventId:'11111111-1111-4111-8111-111111111111',excluded:true,reason:'기타',memo:'검증'}))).status,200);
 console.log('Flow handler: alias/exclusion validation and authorized RPC routing passed.');
+
+// Normal screen reads no match-preview RPC or management-only tables.
+{
+ const requests=[];let activeReads=0,maxReads=0;
+ const fast=createHandler({env,fetcher:async(url,options={})=>{
+  requests.push(url);activeReads++;maxReads=Math.max(maxReads,activeReads);
+  await new Promise(resolve=>setImmediate(resolve));
+  const response=await fetcher(url,options);activeReads--;return response;
+ }});
+ const response=await fast(req({action:'list',start:'2026-10-01',end:'2026-10-31',summaryOnly:true}));
+ assert.equal(response.status,200);const data=await response.json();assert.equal(data.events.length,1);
+ assert.ok(maxReads>=4,'Independent DB reads should overlap');
+ assert.ok(!requests.some(url=>/mimine_bank_auto_match|adw_sms_devices|mimine_bank_audit|mimine_bank_holds|mimine_bank_rules/.test(url)),'Screen read excludes management and match computation');
+ assert.ok(requests.some(url=>url.includes('mimine_bank_classifications')));
+ assert.ok(requests.some(url=>url.includes('mimine_bank_allocations?select=*&event_id=')),'Cross-period allocations retained for accurate balance');
+}
+console.log('Fast bank list: parallel DB reads, no match computation, complete allocation balances; legacy management remains available.');

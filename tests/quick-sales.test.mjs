@@ -60,3 +60,10 @@ assert.ok(body.indexOf('name="category"')<body.indexOf('name="vendor"')&&body.in
 assert.match(body,/value="카드 대금"/);assert.equal((body.match(/type="submit"/g)||[]).length,1);assert.doesNotMatch(footer,/type="submit"/);assert.ok(vendorFocused&&!amountFocused,'New expense begins with required description');
 run("openEntry('expense','1','2026-11-03')");assert.match(body,/value="32,400"/);assert.ok(amountFocused&&amountSelected,'Existing expense amount supports direct replacement');
 console.log('Expense entry: category/description/amount order, card-payment choice, adjacent single save, description-first new entry and editing replacement passed.');
+
+run("openEntry('expense','','2026-11-25')");
+assert.match(body,/value="2026-11-25"/);
+assert.doesNotMatch(body,/name="date"[^>]*max=/);
+run("openEntry('sale','','2026-11-03')");
+assert.match(body,/name="date"[^>]*max="2026-11-03"/);
+run('openRange()');assert.doesNotMatch(body,/max=/);

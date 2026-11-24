@@ -32,3 +32,18 @@ const response={settlements:[{sale_date:'2026-11-18',card_amount:6000,cash_amoun
  const s=setup();s.c.hydrateSalePayment(s.form,s.context);const save=s.c.saveEntry(s.form);s.c.modalContext={};s.c.modalName='';s.resolve(response);await save;assert.equal(s.writes,0);
 }
 console.log('Sale readiness: save waits for metadata; latest cash/fee retained; single save under double tap; retry/recovery and closed-modal guards passed.');
+
+// Expense preregistration must reach the write bridge for both create and edit.
+for(const id of ['', 'e1']){
+ const s=setup();s.context.entryType='expense';s.context.id=id;s.context.requestId='future-request';
+ s.fields.date.value='2026-11-25';
+ s.fields.vendor={value:'KB국민카드'};s.fields.category={value:'카드 대금'};
+ s.c.paymentComposeNote=(note)=>note;s.c.expenseComposeNote=(note)=>note;
+ await s.c.saveEntry(s.form);
+ assert.equal(s.writes,1);assert.equal(s.payload.date,'2026-11-25');assert.equal(s.payload.id,id);assert.equal(s.payload.amount,8800);
+}
+{
+ const s=setup();s.fields.date.value='2026-11-25';await s.c.saveEntry(s.form);
+ assert.equal(s.writes,0);assert.match(s.error,/매출은 오늘까지/);
+}
+console.log('Future expense create/edit allowed; future sales remain blocked.');

@@ -31,7 +31,7 @@ assert.match(homeHtml,/누적 매출 비교/);assert.match(homeHtml,/data-swipe-
 assert.doesNotMatch(run('renderReports()'),/today-tiles|일별 매출 흐름/);
 run("flow.start='2026-01-01';flow.end='2026-01-31';flow.showAll=false");
 assert.deepEqual(plain(run("dailyListTotals(datesIn('2026-01-25','2026-01-31'))")),{current:200,previous:120,delta:80,paired:1,count:7,future:0});
-const shortTable=run('dailyTable()');assert.match(shortTable,/현재 표시 7일/);assert.ok(shortTable.indexOf('목록 합계')<shortTable.indexOf('<table'));
+const shortTable=run('dailyTable()');assert.match(shortTable,/현재 표시 31일/);assert.ok(shortTable.indexOf('목록 합계')<shortTable.indexOf('<table'));
 run('flow.showAll=true');assert.match(run('dailyTable()'),/현재 표시 31일/);assert.equal(run("dailyListTotals(datesIn(flow.start,flow.end)).delta"),100);
 run("db.sales.push({date:'2026-01-20',amount:0},{date:'2025-01-20',amount:0})");assert.equal(run("yearDayStats('2026-01-20').change"),0);
 for(const metric of ['sales','cost','balance']){run("annual.metric='"+metric+"'");assert.match(run('annualChartPanel()'),/annual-months-previous/);}
@@ -39,3 +39,16 @@ c.sheet=(title,body,footer)=>c.detail={title,body,footer};run('openAnnualMonth(1
 run('annual.year=2025');assert.equal(run('annualComparisonStats().current.end'),'2025-12-31');assert.equal(run('annualComparisonStats().current.values.sales'),1700);
 run("annual.year=2024;db.sales=[{date:'2024-02-29',amount:7},{date:'2023-02-28',amount:5}];db.expenses=[]");assert.equal(run('annualMonthRows()[1].current.end'),'2024-02-29');assert.equal(run('annualMonthRows()[1].current.values.sales'),7);assert.equal(run('annualMonthRows()[1].previous.end'),'2023-02-28');
 console.log('Home/year reports: same-elapsed home comparison, cumulative chart, visible-list totals, 12 calendar months, full prior December, partial/future/missing/zero distinctions, monthly details, leap years and separate page purposes passed.');
+
+run("flow.preset='month';flow.start='2026-11-01';flow.end='2026-11-30';flow.showAll=false;db.sales=[{date:'2026-11-01',amount:300},{date:'2026-11-02',amount:0},{date:'2026-11-04',amount:900}]");
+assert.equal(run('visibleDailyDates().length'),3);
+assert.match(run('dailyTable()'),/현재 표시 3일/);
+assert.match(run('dailyTable()'),/30일 전체 보기/);
+assert.match(run('homeDailyAverage()'),/이번 달 일평균 매출/);
+assert.match(run('homeDailyAverage()'),/>100원</);
+assert.match(run('homeDailyAverage()'),/미입력 1일/);
+run('flow.showAll=true');assert.equal(run('visibleDailyDates().length'),30);assert.match(run('dailyTable()'),/현재 표시 30일/);assert.match(run('dailyTable()'),/오늘까지 보기/);
+run("setFlowPreset('week')");assert.equal(run('visibleDailyDates().length'),7);assert.match(run('homeDailyAverage()'),/최근 7일 일평균 매출/);assert.match(run('homeDailyAverage()'),/÷ 7일/);
+run("setFlowPreset('lastMonth')");assert.equal(run('visibleDailyDates().length'),31);assert.match(run('homeDailyAverage()'),/지난달 일평균 매출/);
+run("flow.start='2026-12-01';flow.end='2026-12-31';flow.preset='custom'");assert.equal(run('visibleDailyDates().length'),0);assert.match(run('homeDailyAverage()'),/집계 자료 없음/);
+console.log('Daily list: elapsed month/full month toggle, selected periods; calendar-day average excludes future and labels missing days.');

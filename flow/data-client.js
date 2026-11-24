@@ -19,7 +19,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   const results=await Promise.all([
    finance?rows('sales','sale_date'):[],finance?rows('expenses','expense_date'):[],stock?rows('products'):[],stock?rows('product_categories'):[],stock?rows('product_purchase_batches'):[],
    stock?rows('mimine_stock_documents','created_at','id,document_type,purchase_date,supplier,total,item_subtotal,items,fingerprint,expense_id,created_at').then(data=>({data})).catch(error=>({data:[],error:error.message})):{data:[]},
-   bankScope?bankApi({action:'list',start,end:today},session).then(data=>({data})).catch(error=>({data:{},error:error.message})):{data:{}},
+   bankScope?bankApi({action:'list',start,end:today,summaryOnly:true},session).then(data=>({data})).catch(error=>({data:{},error:error.message})):{data:{}},
    stock?rows('product_images').then(data=>({data})).catch(error=>({data:[],error:error.message})):{data:[]},
    settings?db.from('mimine_settings').select('setting_value,updated_at').eq('setting_key','recurring_payment_rules_v1').abortSignal(AbortSignal.timeout(10000)).maybeSingle().then(r=>{if(r.error)throw r.error;return{data:r.data};}).catch(error=>({data:null,error:error.message})):{data:null}
   ]);
@@ -46,7 +46,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
     if(!bankScope||bankResult.error)return withSettlement(s,old?.settlementKnown?{card_amount:old.card,cash_amount:old.cash,other_amount:old.other,fee_amount:old.fee,due_date:old.due}:null);
     return withSettlement(s,settlements.get(s.date));
    }),
-   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo)})),
+   expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo),...expenseMetadata(e.memo)})),
    products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=(batchIndex.get(String(p.id))||[]).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,imageUrl:productImages.get(String(p.id))||'',category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:supplierIndex.get(String(p.id))||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
    events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=dateFormat.format(d),time=timeFormat.format(d);return{id:e.id,date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||matchedEvents.has(e.id)};}),
    links:allocations.map(a=>({id:a.event_id+'|'+a.sale_date,saleId:'s-'+a.sale_date,eventId:a.event_id,amount:Number(a.amount),method:a.match_source==='auto'?'자동':'수동'})),
@@ -54,7 +54,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    receipts:docs.data.filter(d=>d.document_type==='receipt').reverse().map(d=>({id:d.id,date:d.purchase_date,supplier:d.supplier,total:Number(d.total),itemSubtotal:Number(d.item_subtotal),adjustment:Number(d.total)-Number(d.item_subtotal),items:d.items,imageData:d.image_data,rawText:d.raw_text,imageFingerprint:d.fingerprint,expenseId:d.expense_id})),
    connection:{paymentSettingsError:paymentSettings.error||'',imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
   };
-  const connection={...base?.connection,...next.connection,bankReady:bankScope?!bankResult.error:!!base?.connection?.bankReady,stockReady:stock||!!base?.connection?.stockReady,paymentReady:settings||!!base?.connection?.paymentReady};
+  const connection={...base?.connection,...next.connection,bankReady:bankScope?(!bankResult.error||!!base?.connection?.bankReady):!!base?.connection?.bankReady,stockReady:stock||!!base?.connection?.stockReady,paymentReady:settings||!!base?.connection?.paymentReady};
   if(!finance)next.expenses=base.expenses;
   if(!settings){for(const key of ['paymentRulesConfigured','paymentRules','paymentClosedDays'])next[key]=base?.[key]??next[key];connection.paymentSettingsError=base?.connection?.paymentSettingsError||'';}
   if(!stock){next.products=base?.products||[];next.receipts=base?.receipts||[];for(const key of ['imageError','stockError'])connection[key]=base?.connection?.[key]||'';}
@@ -102,7 +102,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    const r=await db.rpc('mimine_save_expense',{p_request_id:payload.requestId,p_expense:payload});if(r.error)throw new Error(r.error.message);
    const result=r.data||{};
    // Confirm only this saved row; do not fetch the entire sales/expense history.
-   if(result.id){try{const row=await db.from('expenses').select('id,expense_date,amount,category,vendor,memo').eq('id',result.id).abortSignal(AbortSignal.timeout(10000)).maybeSingle();if(!row.error&&row.data){const e=row.data;result.expense={id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo)};}}catch{}}
+   if(result.id){try{const row=await db.from('expenses').select('id,expense_date,amount,category,vendor,memo').eq('id',result.id).abortSignal(AbortSignal.timeout(10000)).maybeSingle();if(!row.error&&row.data){const e=row.data;result.expense={id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo),...expenseMetadata(e.memo)};}}catch{}}
    return result;
   }
   if(command==='delete'){
@@ -114,6 +114,9 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    }
    const r=await db.from(table).delete().eq('id',payload.id);if(r.error)throw new Error(r.error.message);return result;
   }
+  if(command==='stock-history'){const r=await db.from('product_inventory_stocktakes').select('id,book_quantity,counted_quantity,difference_quantity,memo,created_at').eq('product_id',Number(payload.productId)).order('created_at',{ascending:false}).limit(50).abortSignal(AbortSignal.timeout(10000));if(r.error)throw new Error(r.error.message);return r.data||[];}
+  if(command==='stocktake-review'){const r=await db.rpc('mimine_review_stocktake',{p_product_id:Number(payload.productId),p_count:payload.qty,p_expected:payload.expectedBook,p_memo:payload.reason});if(r.error)throw new Error(r.error.message);return r.data;}
+  if(command==='batch-expiry'){const r=await db.rpc('mimine_update_batch_expiries',{p_product_id:Number(payload.productId),p_batches:payload.batches});if(r.error)throw new Error(r.error.message);return r.data;}
   if(command==='stocktake'){
    const r=await db.rpc('stocktake_mimine_inventory',{p_product_id:Number(payload.productId),p_counted_quantity:payload.qty,p_memo:payload.reason});if(r.error)throw new Error(r.error.message);return r.data;
   }

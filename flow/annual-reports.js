@@ -50,7 +50,7 @@ function dailyListTotals(dates){
  return{current:current.length?sum(current,r=>r.sale.amount):null,previous:prior.length?sum(prior,r=>r.prior.amount):null,delta:paired.length?sum(paired,r=>r.change):null,paired:paired.length,count:dates.length,future:rows.filter(r=>r.future).length};
 }
 dailyTable=function(){
- const rows=datesIn(flow.start,flow.end).reverse(),past=rows.filter(d=>d<=TODAY),shown=flow.showAll?rows:(past.length?past:rows).slice(0,7),t=dailyListTotals(shown);
+ const shown=visibleDailyDates(),t=dailyListTotals(shown);
  const totals='<div class="daily-list-summary"><div class="daily-list-summary-title"><strong>목록 합계</strong><span>현재 표시 '+t.count+'일</span></div><div class="daily-list-summary-values"><div class="metric-previous"><small>'+(t.future?'작년 전체':'작년 매출')+'</small><strong>'+metricAmount(t.previous,'sales',{money:true})+'</strong></div><div class="metric-sales"><small>일매출</small><strong>'+metricAmount(t.current,'sales',{editable:true,money:true})+'</strong></div><div class="metric-balance '+changeTone(t.delta)+'"><small>같은 날 증감</small><strong>'+(t.delta===null?'—':signed(t.delta)+'<span>원</span>')+'</strong></div></div><p>증감은 양쪽 매출이 입력된 '+t.paired+'일 기준'+(t.future?' · 예정 '+t.future+'일은 작년만 합산':'')+'</p></div>';
  return dailyTableBeforeListTotals().replace('<table class="flow-daily-table daily-yoy-table">',totals+'<table class="flow-daily-table daily-yoy-table">');
 };
@@ -97,7 +97,13 @@ function openAnnualMonth(month){
  const table='<table class="flow-daily-table daily-yoy-table annual-detail-table"><thead><tr><th>날짜</th><th class="metric-previous">작년 매출</th><th class="metric-sales">일매출</th><th>증감</th></tr></thead><tbody>'+dates.map(date=>{const r=yearDayStats(date);return '<tr><th><button type="button" class="date-detail-button" data-action="annual-day" data-date="'+date+'" aria-label="'+date+' 일매출 상세">'+md(date)+'</button></th><td class="metric-previous">'+(r.prior?fmt(r.prior.amount):'미입력')+'</td><td class="metric-sales">'+(r.future?'예정':r.sale?todaySalesAmount(fmt(r.sale.amount),'일매출'):'미입력')+'</td><td class="'+changeTone(r.change)+'">'+(r.change===null?'—':signed(r.change))+'</td></tr>';}).join('')+'</tbody></table>';
  sheet(annual.year+'년 '+month+'월 상세','<p class="annual-detail-note">조회 '+shortRange(row.current.start,row.current.actualEnd||row.current.end)+' · 작년 '+shortRange(row.previous.start,row.previous.end)+' 전체</p>'+annualMetricSummary(row.current,row.previous,row.delta)+'<h3 class="annual-detail-heading">일별 매출 비교</h3>'+table+'<p class="flow-note">단위: 원 · 날짜를 누르면 매출·비용 상세를 확인합니다. 미래 날짜는 작년 실적만 참고할 수 있습니다.</p>','<button type="button" class="secondary" data-action="close-modal">닫기</button>',{name:'annual-month'});
 }
-renderToday=()=>'<div class="analytics-page home-overview-page">'+heading('','매출·비용 흐름','', '<span class="flow-today-date">'+dateText(TODAY)+'</span>')+todayTiles()+analyticalPeriodControl()+'<div class="home-overview-grid"><div class="home-overview-main">'+homeYearSummary()+flowChart()+'</div><aside>'+homeForecastSummary()+dailyTable()+'</aside></div></div>';
+function homeDailyAverage(){
+ const s=periodStats(flow.start,flow.end),end=flow.end>TODAY?TODAY:flow.end;
+ const label=({today:'오늘',week:'최근 7일',month:'이번 달',lastMonth:'지난달',year:'올해',custom:'선택 기간'})[flow.preset]||'선택 기간';
+ const avg=s.days&&s.recorded?Math.round(s.sales/s.days):null;
+ return '<section class="home-forecast-card home-daily-average"><div class="flow-card-title"><h2>'+label+' 일평균 매출</h2><span>경과일 기준</span></div><strong class="home-forecast-amount metric-sales">'+(avg===null?'집계 자료 없음':won(avg))+'</strong><p class="flow-note">'+(s.days?shortRange(flow.start,end)+' · '+won(s.sales)+' ÷ '+s.days+'일':'아직 집계할 날짜가 없습니다.')+'</p><p class="flow-note">미래 날짜 제외 · '+(s.missing?'매출 미입력 '+s.missing+'일 포함 · 입력 시 평균이 갱신됩니다.':'0원 등록일도 일수에 포함합니다.')+'</p></section>';
+}
+renderToday=()=>'<div class="analytics-page home-overview-page">'+heading('','매출·비용 흐름','', '<span class="flow-today-date">'+dateText(TODAY)+'</span>')+todayTiles()+analyticalPeriodControl()+homeDailyAverage()+'<div class="home-overview-grid"><div class="home-overview-main">'+homeYearSummary()+flowChart()+'</div><aside>'+homeForecastSummary()+dailyTable()+'</aside></div></div>';
 renderReports=annualReportPage;
 const actionBeforeAnnual=action;
 action=function(el){

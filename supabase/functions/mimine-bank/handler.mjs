@@ -24,21 +24,33 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
  case 'list':{
  if(!date(b.start)||!date(b.end)||b.start>b.end||Date.parse(b.end)-Date.parse(b.start)>366*86400000*5)return reply({error:'조회 기간은 최대 5년입니다.'},400);
  let truncated=false;const pages=async(path)=>{let all=[];for(let offset=0;offset<20000;offset+=1000){const rows=await db(path+'&limit=1000&offset='+offset);all.push(...rows);if(rows.length<1000)return all}truncated=true;return all};
- const settlements=await pages('mimine_settlements?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc');
- const allocations=await pages('mimine_bank_allocations?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc');
- let events=await pages('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&occurred_at=gte.'+encodeURIComponent(b.start+'T00:00:00+09:00')+'&occurred_at=lt.'+encodeURIComponent(b.end+'T23:59:59.999999+09:00')+'&order=occurred_at.desc,id');
- const missing=[...new Set(allocations.map(a=>a.event_id))].filter(id=>!events.some(e=>e.id===id));
- for(let i=0;i<missing.length;i+=100)events.push(...await db('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&id=in.('+missing.slice(i,i+100).join(',')+')'));
- const ids=events.map(e=>e.id);let classifications=[];
- for(let i=0;i<ids.length;i+=100)classifications.push(...await db('mimine_bank_classifications?select=*&event_id=in.('+ids.slice(i,i+100).join(',')+')'));
- // Include allocations outside the period for each visible event to show available balances accurately.
- let eventAllocations=[];for(let i=0;i<ids.length;i+=100)eventAllocations.push(...await pages('mimine_bank_allocations?select=*&event_id=in.('+ids.slice(i,i+100).join(',')+')&order=sale_date'));
- const devices=await db('adw_sms_devices?select=id,name,enabled,last_seen_at&order=created_at.desc');
- const rules=await db('mimine_bank_rules?select=*&order=updated_at.desc');
- const aliases=await db('mimine_payer_aliases?select=*&order=updated_at.desc');
- const holds=await db('mimine_bank_holds?select=event_id');
- const matching=await db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:false,p_actor:email}});
- const matchHistory=await db('mimine_bank_audit?select=action,detail,created_at&action=eq.auto_match&order=created_at.desc&limit=10');
+ // Only independent reads run together; cap event batches at four DB requests.
+ const batches=async(items,load)=>{const result=[];for(let i=0;i<items.length;i+=400){const groups=[];for(let j=i;j<Math.min(items.length,i+400);j+=100)groups.push(load(items.slice(j,j+100)));result.push(...(await Promise.all(groups)).flat());}return result;};
+ const [settlements,allocations,initialEvents,aliases]=await Promise.all([
+  pages('mimine_settlements?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc'),
+  pages('mimine_bank_allocations?select=*&sale_date=gte.'+b.start+'&sale_date=lte.'+b.end+'&order=sale_date.desc'),
+  pages('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&occurred_at=gte.'+encodeURIComponent(b.start+'T00:00:00+09:00')+'&occurred_at=lt.'+encodeURIComponent(b.end+'T23:59:59.999999+09:00')+'&order=occurred_at.desc,id'),
+  db('mimine_payer_aliases?select=*&order=updated_at.desc')
+ ]);
+ const eventIds=new Set(initialEvents.map(e=>e.id));
+ const missing=[...new Set(allocations.map(a=>a.event_id))].filter(id=>!eventIds.has(id));
+ const events=initialEvents.concat(await batches(missing,ids=>db('adw_sms_events?select=id,amount,payer,occurred_at,received_at,status,payment_id,customer_id,account_suffix&id=in.('+ids.join(',')+')')));
+ const ids=events.map(e=>e.id);
+ const [classifications,eventAllocations]=await Promise.all([
+  batches(ids,group=>db('mimine_bank_classifications?select=*&event_id=in.('+group.join(',')+')')),
+  // Keep every allocation for visible events, including sales outside the selected range.
+  batches(ids,group=>pages('mimine_bank_allocations?select=*&event_id=in.('+group.join(',')+')&order=sale_date'))
+ ]);
+ let devices=[],rules=[],holds=[],matching=null,matchHistory=[];
+ // The normal screen does not consume device settings or expensive match previews.
+ // Legacy management requests retain the complete response by omitting summaryOnly.
+ if(b.summaryOnly!==true)[devices,rules,holds,matching,matchHistory]=await Promise.all([
+  db('adw_sms_devices?select=id,name,enabled,last_seen_at&order=created_at.desc'),
+  db('mimine_bank_rules?select=*&order=updated_at.desc'),
+  db('mimine_bank_holds?select=event_id'),
+  db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:false,p_actor:email}}),
+  db('mimine_bank_audit?select=action,detail,created_at&action=eq.auto_match&order=created_at.desc&limit=10')
+ ]);
  return reply({matchHistory,rules,aliases,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
  }
  case 'alias':{
