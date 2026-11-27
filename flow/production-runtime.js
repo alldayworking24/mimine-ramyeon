@@ -19,7 +19,7 @@ let productionPending=new Map(),lastFinanceRefresh=Date.now(),lastBankRefresh=0;
 function mergeProductionRead(next,scope){
  if(scope==='all')return next;
  const fields={finance:['sales','expenses'],settings:['paymentRulesConfigured','paymentRules','paymentClosedDays'],bank:['events','links','payerRules'],stock:['products','receipts']}[scope];
- const flags={finance:['refreshedAt'],settings:['paymentReady','paymentSettingsError'],bank:['bankReady','bankError','truncated','bankStart','bankEnd','refreshedAt'],stock:['stockReady','stockError','imageError']}[scope];
+ const flags={finance:['refreshedAt'],settings:['paymentReady','paymentSettingsError'],bank:['receiverHealth','bankReady','bankError','truncated','bankStart','bankEnd','refreshedAt'],stock:['stockReady','stockError','imageError']}[scope];
  const merged={...db,connection:{...db.connection}};
  for(const key of fields)merged[key]=next[key];
  for(const key of flags)merged.connection[key]=next.connection[key];

@@ -2667,8 +2667,8 @@ body.entry-sheet-open{overflow:auto;touch-action:auto}
 .brand-icon,.logo{background:transparent !important;border-color:transparent !important;box-shadow:none !important;}
 .brand-icon img,.logo img{display:block;width:100%;height:100%;object-fit:contain;background:transparent !important;}
 
-.expenses-monthly-yoy .diff-up{color:var(--danger)}
-.expenses-monthly-yoy .diff-down{color:var(--profit)}
+.expenses-monthly-yoy .diff-up{color:var(--profit)}
+.expenses-monthly-yoy .diff-down{color:var(--danger)}
 .daily-average-compare{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .average-row{display:grid;grid-template-columns:58px minmax(0,1fr) 100px;gap:10px;align-items:center;margin:12px 0;font-size:13px}.average-row strong{text-align:right;font-variant-numeric:tabular-nums}.average-track{height:14px;background:#f4efed;border-radius:7px;overflow:hidden}.average-bar{height:100%;border-radius:7px}.average-bar.current{background:var(--brand-dark)}.average-bar.previous{background:#c6b6b1}
 .insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.insight-grid .card span{display:block;font-size:12px;color:var(--muted)}.insight-grid strong{display:block;font-size:20px;margin-top:7px;overflow-wrap:anywhere}.goal-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.goal-form label{grid-column:1/-1;font-size:12px}.goal-form input{min-width:0;width:100%;box-sizing:border-box}.goal-form button,.missing-dates button,.missing-summary{min-height:44px}.missing-summary{width:100%;white-space:normal}#monthlyGoalProgress{width:100%;height:14px;margin:12px 0;accent-color:var(--sales)}#monthlyGoalSummary{display:block;overflow-wrap:anywhere}.missing-dates{display:flex;flex-wrap:wrap;gap:8px}#missingSalesCard{scroll-margin-top:80px}.section-head{flex-wrap:wrap}.section-head span,.compare-total span,.hint{overflow-wrap:anywhere}.compare-total-grid{min-width:0}.compare-total{min-width:0}.compare-diff{flex-wrap:wrap}.chart-detail .values{flex-wrap:wrap}.legend{flex-wrap:wrap}.expense-category-comparison .compare-table-wrap{overflow-x:auto}.expense-category-comparison .compare-table{min-width:520px}.expense-category-comparison td:first-child{white-space:normal;overflow-wrap:anywhere}
@@ -2922,7 +2922,7 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 <div class="compare-table-wrap">
 <table class="compare-table">
 <thead>
-<tr><th>월</th><th id="expenseMonthlyPrevYearHead">2025년</th><th id="expenseMonthlyCurrentYearHead">2026년</th><th>차이 (올해−작년)</th></tr>
+<tr><th>월</th><th id="expenseMonthlyPrevYearHead">2025년</th><th id="expenseMonthlyCurrentYearHead">2026년</th><th>절감 + / 증가 −</th></tr>
 </thead>
 <tbody id="expenseMonthlyYoyTableBody">
 <tr><td colspan="4" style="text-align:center;color:var(--muted)">월별 지출을 계산하고 있습니다.</td></tr>
@@ -2931,7 +2931,7 @@ table thead th { text-align:center !important; vertical-align:middle !important;
 </div>
 </div>
 </div>
-<div class="section card expense-category-comparison"><div class="section-head"><h2>지출 항목별 비교</h2><span id="categoryComparePeriod"></span></div><p class="hint">이번 달은 오늘까지, 지난달도 같은 날짜까지 비교합니다. 표는 좌우로 넘겨 볼 수 있습니다.</p><div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>항목</th><th>지난달</th><th>이번 달</th><th>증감</th></tr></thead><tbody id="categoryCompareBody"></tbody></table></div></div><div class="section"><div class="period-summary hidden" id="expenseListNotice"><span>최근 등록</span><strong id="expenseListNoticeText"></strong></div><div class="compact-list" id="expensesList"></div></div></section>
+<div class="section card expense-category-comparison"><div class="section-head"><h2>지출 항목별 비교</h2><span id="categoryComparePeriod"></span></div><p class="hint">이번 달은 오늘까지, 지난달도 같은 날짜까지 비교합니다. 표는 좌우로 넘겨 볼 수 있습니다.</p><div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>항목</th><th>지난달</th><th>이번 달</th><th>절감 + / 증가 −</th></tr></thead><tbody id="categoryCompareBody"></tbody></table></div></div><div class="section"><div class="period-summary hidden" id="expenseListNotice"><span>최근 등록</span><strong id="expenseListNoticeText"></strong></div><div class="compact-list" id="expensesList"></div></div></section>
 <section class="panel" id="all"><div class="section-head"><h2>전체내용</h2><span id="allRangeText">최근 30일</span></div><div class="card"><div class="select-row"><div class="hint">전체 흐름</div><select class="range-select" id="allRangeSelect" onchange="setRange('all',this.value)"></select></div><div class="chart-detail" id="allDetail"><div class="label" id="allDetailLabel">-</div><div class="values"><span>매출 <strong class="sale" id="allSalesValue">0원</strong></span><span>지출 <strong class="expense" id="allExpenseValue">0원</strong></span></div></div><div class="chart-wrap" id="allChart"></div><div class="legend"><span><i class="dot sales"></i>매출</span><span><i class="dot expense"></i>지출</span></div></div><div class="section"><div class="compact-list" id="allList"></div></div></section>
 <section class="panel" id="products">
 
@@ -4326,7 +4326,7 @@ function renderExpenseMonthlyYoy(){
 
   $('expenseMonthlyPrevYearHead').textContent=`${previousYear}년`;
   $('expenseMonthlyCurrentYearHead').textContent=`${currentYear}년`;
-  $('expenseMonthlyYoyNote').textContent=`${currentMonth}월은 ${cutoffDay}일까지 동일 기간 비교`;
+  $('expenseMonthlyYoyNote').textContent=`${currentMonth}월은 ${cutoffDay}일까지 동일 기간 비교 · 절감 + / 증가 −`;
 
   let prevTotal=0,currentTotal=0;
   const rows=[];
@@ -4335,12 +4335,12 @@ function renderExpenseMonthlyYoy(){
     const isFuture=month>currentMonth;
     const cur=isFuture?null:(currentByMonth[month-1]||0);
     if(!isFuture){ prevTotal+=prev; currentTotal+=cur; }
-    const diff=isFuture?null:cur-prev;
+    const diff=isFuture?null:prev-cur;
     const diffClass=diff===null?'diff-flat':diff>0?'diff-up':diff<0?'diff-down':'diff-flat';
     const diffText=diff===null?'—':`${diff>0?'+':''}${won(diff)}`;
     rows.push(`<tr><td><strong>${month}월</strong></td><td>${won(prev)}</td><td class="expense">${cur===null?'—':`<strong>${won(cur)}</strong>`}</td><td class="${diffClass}">${diffText}</td></tr>`);
   }
-  const totalDiff=currentTotal-prevTotal;
+  const totalDiff=prevTotal-currentTotal;
   const totalClass=totalDiff>0?'diff-up':totalDiff<0?'diff-down':'diff-flat';
   rows.push(`<tr><td><strong>합계</strong></td><td><strong>${won(prevTotal)}</strong></td><td class="expense"><strong>${won(currentTotal)}</strong></td><td class="${totalClass}"><strong>${totalDiff>0?'+':''}${won(totalDiff)}</strong></td></tr>`);
   $('expenseMonthlyYoyTableBody').innerHTML=rows.join('');
@@ -4492,8 +4492,8 @@ function renderExpenseCategories(){
   });
   $('categoryComparePeriod').textContent=prevMonth+'-01 ~ '+previousEnd+' / '+month+'-01 ~ '+currentDate;
   $('categoryCompareBody').innerHTML=[...map.entries()].sort((a,b)=>b[1].current-a[1].current).map(([name,v])=>{
-    const diff=v.current-v.previous;
-    return '<tr><td>'+esc(name)+'</td><td>'+won(v.previous)+'</td><td>'+won(v.current)+'</td><td class="'+(diff>0?'down':diff<0?'up':'flat')+'">'+(diff>0?'+':'')+won(diff)+'</td></tr>';
+    const diff=v.previous-v.current;
+    return '<tr><td>'+esc(name)+'</td><td>'+won(v.previous)+'</td><td>'+won(v.current)+'</td><td class="'+(diff>0?'up':diff<0?'down':'flat')+'">'+(diff>0?'+':'')+won(diff)+'</td></tr>';
   }).join('')||'<tr><td colspan="4">비교할 지출 내역이 없습니다.</td></tr>';
 }
 

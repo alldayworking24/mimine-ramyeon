@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
+const source=await read('flow/bank-recovery.js');new vm.Script(source);
+const context={Intl,Date,productionBridge:{today:()=> '2026-11-26'},bankPeriod:{preset:'month',start:'2026-11-01',end:'2026-11-25'},addDays:(v,n)=>new Date(Date.parse(v+'T12:00:00Z')+n*86400000).toISOString().slice(0,10)};
+vm.createContext(context);vm.runInContext(source.slice(0,source.indexOf('const bankBeforeRecovery')),context);context.syncBankCurrentDay();assert.equal(context.bankPeriod.end,'2026-11-26');context.bankPeriod.preset='custom';context.bankPeriod.end='2026-11-20';context.syncBankCurrentDay();assert.equal(context.bankPeriod.end,'2026-11-20');
+const c={Date,Intl,URL,URLSearchParams,structuredClone,location:{hash:'',href:'https://example.test'},document:{addEventListener(){}},window:{},console};vm.createContext(c);vm.runInContext(await read('flow/preview-provider.js'),c);const bridge=vm.runInContext('createMiminePreviewProvider()',c);const before=await bridge.snapshot();
+const payload={action:'manualDeposit',requestId:'fixed-1',date:'2026-11-03',time:'12:01',payer:'수동입금',amount:1234,business:'mimine',note:'확인'};
+await bridge.invoke('bank',payload);await bridge.invoke('bank',payload);let after=await bridge.snapshot();assert.equal(after.events.length,before.events.length+1);assert.equal(after.sales.length,before.sales.length);const e=after.events.find(e=>e.source==='manual');assert.ok(e);
+await bridge.invoke('bank',{action:'hideDeposit',eventId:e.id,hidden:true});after=await bridge.snapshot();assert.equal(after.events.filter(x=>!x.hidden).length,before.events.length);assert.equal(after.events.find(x=>x.id===e.id).excluded,true);
+await bridge.invoke('bank',{action:'hideDeposit',eventId:e.id,hidden:false});after=await bridge.snapshot();assert.equal(after.events.find(x=>x.id===e.id).excluded,true);
+const bank=await read('flow/bank-automation.js');assert.match(bank,/db.events.filter\(e=>!e.hidden&&e.date>=bankPeriod.start/);assert.match(bank,/for\(const e of db.events.filter\(e=>!e.hidden\)\)/);
+const sql=await read('supabase/bank-recovery-upgrade.sql');assert.match(sql,/pg_advisory_xact_lock/);assert.match(sql,/row level security/);assert.match(sql,/false,false/);assert.match(sql,/'ignored','mimine_manual'/);assert.match(sql,/if v_existing.actor<>p_actor/);
+console.log('Bank recovery: midnight date rollover, manual dedupe without ledger sales, hide/unhide exclusion, total filters and prepared SQL safeguards passed.');

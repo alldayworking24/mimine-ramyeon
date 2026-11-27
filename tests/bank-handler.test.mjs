@@ -52,8 +52,23 @@ console.log('Flow handler: alias/exclusion validation and authorized RPC routing
  const response=await fast(req({action:'list',start:'2026-10-01',end:'2026-10-31',summaryOnly:true}));
  assert.equal(response.status,200);const data=await response.json();assert.equal(data.events.length,1);
  assert.ok(maxReads>=4,'Independent DB reads should overlap');
- assert.ok(!requests.some(url=>/mimine_bank_auto_match|adw_sms_devices|mimine_bank_audit|mimine_bank_holds|mimine_bank_rules/.test(url)),'Screen read excludes management and match computation');
+ assert.ok(!requests.some(url=>/mimine_bank_auto_match|mimine_bank_audit|mimine_bank_holds|mimine_bank_rules/.test(url)),'Screen read excludes management and match computation');
  assert.ok(requests.some(url=>url.includes('mimine_bank_classifications')));
  assert.ok(requests.some(url=>url.includes('mimine_bank_allocations?select=*&event_id=')),'Cross-period allocations retained for accurate balance');
 }
 console.log('Fast bank list: parallel DB reads, no match computation, complete allocation balances; legacy management remains available.');
+
+{
+ const sent=[];const h=createHandler({env,fetcher:async(url,o={})=>{sent.push({url,body:o.body&&JSON.parse(o.body)});return fetcher(url,o);}});
+ const data={action:'manualDeposit',requestId:'11111111-1111-4111-8111-111111111111',date:'2026-01-02',time:'12:30',payer:'확인된 입금',amount:1000,business:'mimine',note:'수동'};
+ assert.equal((await h(req(data))).status,200);
+ assert.ok(sent.some(r=>r.url.includes('rpc/mimine_manual_deposit')&&r.body.p_amount===1000&&r.body.p_occurred==='2026-01-02T12:30:00+09:00'));
+ assert.equal((await h(req({...data,time:'25:01'}))).status,400);
+ assert.equal((await h(req({...data,amount:0}))).status,400);
+ assert.equal((await h(req({...data,date:'2099-01-01'}))).status,400);
+ assert.equal((await h(req({action:'hideDeposit',eventId:data.requestId,hidden:true}))).status,200);
+ assert.ok(sent.some(r=>r.url.includes('rpc/mimine_bank_hide')&&r.body.p_hidden===true));
+ const hidden=createHandler({env,fetcher:(url,o)=>url.includes('mimine_bank_classifications?select=hidden')?Promise.resolve(Response.json([{hidden:true}])):fetcher(url,o)});
+ assert.equal((await hidden(req({action:'exclude',eventId:data.requestId,excluded:false}))).status,409);
+}
+console.log('Bank recovery: manual input validation/KST, hide RPC and hidden-exclusion guard passed.');

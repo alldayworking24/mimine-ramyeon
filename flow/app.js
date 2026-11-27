@@ -23,7 +23,7 @@ const iconPaths={home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0
 const icon=(n,cl='')=>`<svg viewBox="0 0 24 24" aria-hidden="true" ${cl?`class="${cl}"`:''}>${iconPaths[n]||iconPaths.info}</svg>`;
 function seed(){throw new Error('운영 화면은 예시 데이터를 생성하지 않습니다.');}
 let storageAvailable=true,db=productionSnapshot;
-const view={page:'today',date:TODAY,range:'month',customStart:TODAY.slice(0,7)+'-01',customEnd:TODAY,ledgerType:'all',bankTab:'transactions',bankFilter:'all',bankBusiness:'all',productFilter:'all',query:'',productQuery:'',reportRange:'month'};
+const view={page:'ledger',date:TODAY,range:'month',customStart:TODAY.slice(0,7)+'-01',customEnd:TODAY,ledgerType:'all',bankTab:'transactions',bankFilter:'all',bankBusiness:'all',productFilter:'all',query:'',productQuery:'',reportRange:'month'};
 let previousFocus=null,modalName='',modalContext={},toastTimer,undoFn=null;
 function persist(){preferenceSave();}
 function notifyMutation(message){persist();render();toast(message);}
@@ -161,4 +161,4 @@ document.addEventListener('input',e=>{const input=e.target;if(input.matches('[da
 document.addEventListener('change',e=>{if(e.target.name==='match-event'){const event=db.events.find(x=>x.id===e.target.value),s=db.sales.find(x=>x.id===modalContext.saleId);if(event&&s)$('#match-amount').value=fmt(Math.min(remaining(s),available(event)));}});
 document.addEventListener('keydown',e=>{if(!modalName)return;if(e.key==='Escape'){e.preventDefault();closeModal();return;}if(e.key==='Tab'){const items=$$('.sheet button,.sheet input,.sheet select,.sheet textarea,.sheet a').filter(x=>!x.disabled&&x.getClientRects().length),first=items[0],last=items.at(-1);if(!items.length){e.preventDefault();return;}if(e.shiftKey&&(document.activeElement===first||document.activeElement===$('.sheet'))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===$('.sheet'))){e.preventDefault();first.focus();}}});
 window.addEventListener('hashchange',()=>{const page=location.hash.slice(1);if(['today','ledger','bank','products','reports'].includes(page))navigate(page);});
-const firstPage=location.hash.slice(1);if(['today','ledger','bank','products','reports'].includes(firstPage))view.page=firstPage;
+const firstPage=location.hash.slice(1);if(['ledger','bank','products','reports'].includes(firstPage))view.page=firstPage;else view.page='ledger';

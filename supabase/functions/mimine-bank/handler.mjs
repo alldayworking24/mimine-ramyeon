@@ -41,6 +41,8 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
   // Keep every allocation for visible events, including sales outside the selected range.
   batches(ids,group=>pages('mimine_bank_allocations?select=*&event_id=in.('+group.join(',')+')&order=sale_date'))
  ]);
+ const [manualDeposits,lastReceipt,receiverDevices]=await Promise.all([db('mimine_manual_deposits?select=event_id,note'),db('adw_sms_events?select=received_at,occurred_at&or=(reason.is.null,reason.neq.mimine_manual)&order=received_at.desc&limit=1'),db('adw_sms_devices?select=name,enabled,last_seen_at&name=neq.'+encodeURIComponent('미미네 수동 입력 전용'))]);
+ const receiverHealth={lastReceivedAt:lastReceipt?.[0]?.received_at||null,lastOccurredAt:lastReceipt?.[0]?.occurred_at||null,devices:receiverDevices};
  let devices=[],rules=[],holds=[],matching=null,matchHistory=[];
  // The normal screen does not consume device settings or expensive match previews.
  // Legacy management requests retain the complete response by omitting summaryOnly.
@@ -51,7 +53,16 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
   db('rpc/mimine_bank_auto_match',{method:'POST',body:{p_apply:false,p_actor:email}}),
   db('mimine_bank_audit?select=action,detail,created_at&action=eq.auto_match&order=created_at.desc&limit=10')
  ]);
- return reply({matchHistory,rules,aliases,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ return reply({manualDeposits,receiverHealth,matchHistory,rules,aliases,holds,matching,events,classifications,settlements,allocations:eventAllocations,devices,truncated,refreshedAt:new Date().toISOString(),source:'adw-sms'});
+ }
+ case 'manualDeposit':{
+ if(!uuid(b.requestId)||!date(b.date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time||'')||typeof b.payer!=='string'||!b.payer.trim()||b.payer.trim().length>100||!money(b.amount)||!b.amount||!['mimine','adw','other','unclassified'].includes(b.business)||String(b.note||'').length>500)return reply({error:'입금일·시간·입금자·금액을 확인해 주세요.'},400);
+ const occurred=b.date+'T'+b.time+':00+09:00';if(Date.parse(occurred)>Date.now())return reply({error:'미래 시각의 입금은 등록할 수 없습니다.'},400);
+ return reply(await db('rpc/mimine_manual_deposit',{method:'POST',body:{p_request:b.requestId,p_actor:email,p_owner:access[0].adw_user_id,p_payer:b.payer.trim(),p_amount:b.amount,p_occurred:occurred,p_business:b.business,p_note:String(b.note||'')}}));
+ }
+ case 'hideDeposit':{
+ if(!uuid(b.eventId)||typeof b.hidden!=='boolean')return reply({error:'숨길 내역을 확인해 주세요.'},400);
+ return reply(await db('rpc/mimine_bank_hide',{method:'POST',body:{p_event:b.eventId,p_hidden:b.hidden,p_actor:email}}));
  }
  case 'alias':{
  if((b.id&&!uuid(b.id))||typeof b.payer!=='string'||!b.payer.trim()||b.payer.trim().length>100||!['mimine','adw','other'].includes(b.business)||typeof b.active!=='boolean'||String(b.label||'').length>80)return reply({error:'입금자명 규칙을 확인해 주세요.'},400);
@@ -59,6 +70,7 @@ export function createHandler({env,fetcher=fetch}={}){return async req=>{
  }
  case 'exclude':{
  if(!uuid(b.eventId)||typeof b.excluded!=='boolean'||String(b.reason||'').length>100||String(b.memo||'').length>160)return reply({error:'대상 제외 항목을 확인해 주세요.'},400);
+ if(!b.excluded){const c=await db('mimine_bank_classifications?select=hidden&event_id=eq.'+b.eventId);if(c?.[0]?.hidden)return reply({error:'완전 숨김을 먼저 해제해 주세요.'},409);}
  await db('rpc/mimine_bank_exclude',{method:'POST',body:{p_event:b.eventId,p_excluded:b.excluded,p_reason:String(b.reason||''),p_memo:String(b.memo||''),p_actor:email}});return reply({ok:true});
  }
  case 'autoMatch':{

@@ -30,6 +30,7 @@ function createMimineProductionBridge(db,{bankRequest}={}){
   const categories=new Map(cr.map(c=>[String(c.id),c.name]));
   const classifications=new Map((bank.classifications||[]).map(c=>[c.event_id,c]));
   const allocations=bank.allocations||[];
+  const manualIds=new Set((bank.manualDeposits||[]).map(e=>e.event_id));
   let prefs={};try{prefs=JSON.parse(localStorage.getItem('mimine-flow-preferences')||'{}')}catch{}
   const batchIndex=new Map(),supplierIndex=new Map();
   for(const batch of br){const id=String(batch.product_id);if(!batchIndex.has(id))batchIndex.set(id,[]);batchIndex.get(id).push(batch);}
@@ -48,18 +49,18 @@ function createMimineProductionBridge(db,{bankRequest}={}){
    }),
    expenses:er.map(e=>({id:String(e.id),date:e.expense_date,amount:Number(e.amount),category:e.category,vendor:e.vendor||e.memo||e.category,note:paymentCleanNote(e.vendor?e.memo||'':''),paymentLink:paymentExtractTag(e.memo),...expenseMetadata(e.memo)})),
    products:pr.filter(p=>p.is_active!==false).map(p=>{const batches=(batchIndex.get(String(p.id))||[]).sort((a,b)=>b.purchase_date.localeCompare(a.purchase_date)||Number(b.id)-Number(a.id));return{id:String(p.id),name:p.name,imageUrl:productImages.get(String(p.id))||'',category:categories.get(String(p.category_id))||p.category,barcode:p.sku||'',price:Number(p.sale_price),lastSalePrice:Number(p.sale_price),cost:Number(p.purchase_price),min:Number(p.low_stock_threshold??5),supplier:supplierIndex.get(String(p.id))||batches[0]?.supplier||'',color:'#a75542',bg:'#f6e9e3',priceHistory:[],batches:batches.map(b=>({id:String(b.id),qty:Number(b.remaining_quantity),originalQty:Number(b.quantity),cost:Number(b.unit_cost),salePrice:Number(b.sale_price??p.sale_price),date:b.purchase_date,expiry:b.expiration_date||'',source:b.memo||'입고'}))};}),
-   events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=dateFormat.format(d),time=timeFormat.format(d);return{id:e.id,date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||matchedEvents.has(e.id)};}),
+   events:(bank.events||[]).map(e=>{const c=classifications.get(e.id),d=new Date(e.occurred_at),date=dateFormat.format(d),time=timeFormat.format(d);return{id:e.id,hidden:!!c?.hidden,source:manualIds.has(e.id)?'manual':'sms',date,time,payer:e.payer,amount:Number(e.amount),business:e.payment_id||e.customer_id?'adw':c?.business||'unclassified',accountSuffix:e.account_suffix,note:c?.note||'',excluded:!!c?.excluded,excludeReason:c?.exclude_reason||'',excludeMemo:c?.exclude_memo||'',excludedAt:c?.excluded_at||'',classificationSource:c?.classification_source||'',autoRegistered:c?.classification_source==='alias'||matchedEvents.has(e.id)};}),
    links:allocations.map(a=>({id:a.event_id+'|'+a.sale_date,saleId:'s-'+a.sale_date,eventId:a.event_id,amount:Number(a.amount),method:a.match_source==='auto'?'자동':'수동'})),
    payerRules:(bank.aliases||[]).map(a=>({id:a.id,payer:a.payer,business:a.business,label:a.label,active:a.active})),
    receipts:docs.data.filter(d=>d.document_type==='receipt').reverse().map(d=>({id:d.id,date:d.purchase_date,supplier:d.supplier,total:Number(d.total),itemSubtotal:Number(d.item_subtotal),adjustment:Number(d.total)-Number(d.item_subtotal),items:d.items,imageData:d.image_data,rawText:d.raw_text,imageFingerprint:d.fingerprint,expenseId:d.expense_id})),
-   connection:{paymentSettingsError:paymentSettings.error||'',imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
+   connection:{receiverHealth:bank.receiverHealth||base?.connection?.receiverHealth||null,paymentSettingsError:paymentSettings.error||'',imageError:images.error||'',bankError:bankResult.error||'',stockError:docs.error||'',truncated:!!bank.truncated,bankStart:start,bankEnd:today,refreshedAt:new Date().toISOString()}
   };
   const connection={...base?.connection,...next.connection,bankReady:bankScope?(!bankResult.error||!!base?.connection?.bankReady):!!base?.connection?.bankReady,stockReady:stock||!!base?.connection?.stockReady,paymentReady:settings||!!base?.connection?.paymentReady};
   if(!finance)next.expenses=base.expenses;
   if(!settings){for(const key of ['paymentRulesConfigured','paymentRules','paymentClosedDays'])next[key]=base?.[key]??next[key];connection.paymentSettingsError=base?.connection?.paymentSettingsError||'';}
   if(!stock){next.products=base?.products||[];next.receipts=base?.receipts||[];for(const key of ['imageError','stockError'])connection[key]=base?.connection?.[key]||'';}
   if(!bankScope||bankResult.error){for(const key of ['events','links','payerRules'])next[key]=base?.[key]||[];}
-  if(!bankScope){for(const key of ['bankError','truncated','bankStart','bankEnd'])connection[key]=base?.connection?.[key]??connection[key];}
+  if(!bankScope){for(const key of ['receiverHealth','bankError','truncated','bankStart','bankEnd'])connection[key]=base?.connection?.[key]??connection[key];}
   return {...next,connection};
  }
  function withSettlement(s,t){const card=Number(t?.card_amount||0),cash=Number(t?.cash_amount||0),other=Number(t?.other_amount||0);return {...s,card,cash,other,fee:Number(t?.fee_amount||0),due:t?.due_date||'',settlementKnown:!!t,settlementConsistent:!t||card+cash+other===s.amount};}
